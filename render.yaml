@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: kalendarz-urlopow
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /login.html
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_USER
+        value: admin
+      - key: AUTH_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: GITHUB_GIST_ID
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false

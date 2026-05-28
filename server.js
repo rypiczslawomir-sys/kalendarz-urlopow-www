@@ -3,13 +3,11 @@ require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
-const fs = require("fs");
 const path = require("path");
+const { ensureDataDir, readState, writeState, storageMode } = require("./lib/storage");
 
 const PORT = parseInt(process.env.PORT, 10) || 5175;
 const ROOT = __dirname;
-const DATA_DIR = path.join(ROOT, "data");
-const DATA_FILE = path.join(DATA_DIR, "state.json");
 
 const AUTH_USER = (process.env.AUTH_USER || "admin").trim();
 const AUTH_PASSWORD = process.env.AUTH_PASSWORD || "";
@@ -26,46 +24,17 @@ if (IS_PROD && SESSION_SECRET === "dev-only-change-me-in-production") {
   process.exit(1);
 }
 
+if (IS_PROD && storageMode() !== "gist") {
+  console.error("Ustaw GITHUB_GIST_ID i GITHUB_TOKEN — dane na Render muszą być w GitHub Gist.");
+  process.exit(1);
+}
+
 const passwordHash = AUTH_PASSWORD
   ? bcrypt.hashSync(AUTH_PASSWORD, 12)
   : bcrypt.hashSync("admin", 12);
 
 if (!AUTH_PASSWORD) {
   console.warn("⚠  Brak AUTH_PASSWORD — logowanie: admin / admin (tylko do testów lokalnych!)");
-}
-
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-function defaultState() {
-  return {
-    version: 5,
-    year: new Date().getFullYear(),
-    activeCode: "U",
-    activeHours: 8,
-    employees: [],
-  };
-}
-
-function readState() {
-  ensureDataDir();
-  if (!fs.existsSync(DATA_FILE)) return defaultState();
-  try {
-    const raw = fs.readFileSync(DATA_FILE, "utf8");
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object") return parsed;
-  } catch (e) {
-    console.error("Błąd odczytu danych:", e.message);
-  }
-  return defaultState();
-}
-
-function writeState(data) {
-  ensureDataDir();
-  const tmp = DATA_FILE + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf8");
-  fs.renameSync(tmp, DATA_FILE);
 }
 
 const app = express();
@@ -99,7 +68,6 @@ function requireAuth(req, res, next) {
   return res.redirect("/login.html");
 }
 
-// ─── API (publiczne: login) ───────────────────────────────────────────
 app.post("/api/login", (req, res) => {
   const username = String(req.body?.username || "").trim();
   const password = String(req.body?.password || "");
@@ -115,7 +83,6 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-// ─── strona logowania + statyczne assety bez auth ───────────────────────
 app.get("/login.html", (req, res) => {
   if (isLoggedIn(req)) return res.redirect("/");
   res.sendFile(path.join(ROOT, "login.html"));
@@ -124,7 +91,6 @@ app.get("/login.html", (req, res) => {
 app.use("/css", express.static(path.join(ROOT, "css")));
 app.use("/js/login.js", express.static(path.join(ROOT, "js", "login.js")));
 
-// ─── chronione ──────────────────────────────────────────────────────────
 app.use(requireAuth);
 
 app.post("/api/logout", (req, res) => {
@@ -137,17 +103,22 @@ app.get("/api/me", (req, res) => {
   res.json({ user: req.session.user });
 });
 
-app.get("/api/state", (req, res) => {
-  res.json(readState());
+app.get("/api/state", async (req, res) => {
+  try {
+    res.json(await readState());
+  } catch (e) {
+    console.error("Błąd odczytu:", e.message);
+    res.status(500).json({ error: "Nie udało się wczytać danych" });
+  }
 });
 
-app.put("/api/state", (req, res) => {
+app.put("/api/state", async (req, res) => {
   const body = req.body;
   if (!body || typeof body !== "object" || !Array.isArray(body.employees)) {
     return res.status(400).json({ error: "Nieprawidłowy format danych" });
   }
   try {
-    writeState(body);
+    await writeState(body);
     res.json({ ok: true });
   } catch (e) {
     console.error("Błąd zapisu:", e.message);
@@ -163,6 +134,6 @@ app.get("/", (req, res) => {
 
 app.listen(PORT, () => {
   ensureDataDir();
-  console.log(`Kalendarz urlopowy: http://localhost:${PORT}/`);
+  console.log(`Kalendarz urlopowy: port ${PORT} | storage: ${storageMode()}`);
   if (!IS_PROD) console.log(`Login: ${AUTH_USER} / ${AUTH_PASSWORD || "admin"}`);
 });
