@@ -44,10 +44,20 @@
     </section>
 
     <main class="table-wrap" id="tableWrap">
-        <table class="kalendarz" id="kalendarz">
-            <thead id="kalendarzHead"></thead>
-            <tbody id="kalendarzBody"></tbody>
-        </table>
+        <div class="cal-split">
+            <div class="cal-frozen" id="calFrozen">
+                <table class="kalendarz kalendarz-frozen">
+                    <thead id="kalendarzHeadFrozen"></thead>
+                    <tbody id="kalendarzBodyFrozen"></tbody>
+                </table>
+            </div>
+            <div class="cal-scroll">
+                <table class="kalendarz kalendarz-scroll" id="kalendarz">
+                    <thead id="kalendarzHead"></thead>
+                    <tbody id="kalendarzBody"></tbody>
+                </table>
+            </div>
+        </div>
     </main>
 
     <section class="summary" id="summary">
@@ -101,6 +111,18 @@
         </div>
     </aside>
 
+    <!-- Pływające okno: przeszkoleni pracownicy (prawy dolny róg) -->
+    <aside class="training-stats-panel" id="trainingStatsPanel">
+        <div class="day-stats-header">
+            <div class="day-stats-title">
+                <span class="day-stats-icon">🎓</span>
+                Przeszkoleni pracownicy
+            </div>
+            <button class="day-stats-toggle" id="trainingStatsToggleBtn" title="Zwiń / rozwiń">−</button>
+        </div>
+        <div class="training-stats-body" id="trainingStatsBody"></div>
+    </aside>
+
     <!-- Modal: dodaj / edytuj pracownika -->
     <div class="modal-backdrop" id="empModal" hidden>
         <div class="modal" role="dialog" aria-labelledby="empModalTitle">
@@ -117,6 +139,17 @@
                     <span class="form-label">Imię <em>*</em></span>
                     <input type="text" id="empFirstName" maxlength="60" autocomplete="off" required>
                 </label>
+                <div class="form-row form-row--trainings">
+                    <span class="form-label">Szkolenia <em class="opt">(dział + obszar — można dodać wiele)</em></span>
+                    <div class="train-editor" id="empTrainEditor">
+                        <div class="train-selected-list" id="empTrainList"></div>
+                        <div class="train-add-bar">
+                            <select id="trainAddDept" aria-label="Dział szkolenia"></select>
+                            <select id="trainAddArea" aria-label="Obszar szkolenia"></select>
+                            <button type="button" class="btn btn-ghost btn-sm" id="trainAddBtn">+ Dodaj</button>
+                        </div>
+                    </div>
+                </div>
                 <div class="form-row">
                     <span class="form-label">Funkcje <em class="opt">(można wybrać kilka)</em></span>
                     <div class="checkbox-group" id="empFuncs"></div>

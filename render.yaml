@@ -4,6 +4,8 @@ services:
     runtime: node
     plan: free
     region: frankfurt
+    repo: https://github.com/rypiczslawomir-sys/kalendarz-urlopow-www
+    branch: main
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /login.html
