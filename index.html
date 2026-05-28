@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalendarz urlopowy</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="brand">
+            <span class="brand-icon">📅</span>
+            <div class="brand-text">
+                <h1>Kalendarz urlopowy</h1>
+                <span class="brand-sub" id="brandSubtitle">— wybierz rok</span>
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <label class="year-selector">
+                <span>Rok:</span>
+                <select id="yearSelect"></select>
+            </label>
+
+            <button class="btn btn-primary" id="addEmployeeBtn">
+                <span class="icon">+</span> Dodaj pracownika
+            </button>
+
+            <button class="btn btn-ghost" id="exportBtn" title="Zapisz dane do pliku .json">
+                ⬇ Eksport
+            </button>
+            <label class="btn btn-ghost" title="Wczytaj dane z pliku .json">
+                ⬆ Import
+                <input type="file" id="importInput" accept="application/json" hidden>
+            </label>
+
+            <button class="btn btn-ghost" id="logoutBtn" title="Wyloguj">Wyloguj</button>
+        </div>
+    </header>
+
+    <section class="code-picker" id="codePicker">
+        <span class="picker-label">Aktywny kod:</span>
+        <!-- Buttons wstawiane przez JS -->
+    </section>
+
+    <main class="table-wrap" id="tableWrap">
+        <table class="kalendarz" id="kalendarz">
+            <thead id="kalendarzHead"></thead>
+            <tbody id="kalendarzBody"></tbody>
+        </table>
+    </main>
+
+    <section class="summary" id="summary">
+        <div class="summary-card">
+            <span class="summary-label">Pracowników</span>
+            <span class="summary-value" id="statEmployees">0</span>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Łącznie dni urlopowych</span>
+            <span class="summary-value" id="statTotalVacation">0</span>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Dni na L4</span>
+            <span class="summary-value" id="statL4">0</span>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Świąt w roku</span>
+            <span class="summary-value" id="statHolidays">0</span>
+        </div>
+    </section>
+
+    <!-- Pływające okno: statystyki obsady na wybrany dzień -->
+    <aside class="day-stats" id="dayStats">
+        <div class="day-stats-header">
+            <div class="day-stats-title">
+                <span class="day-stats-icon">👥</span>
+                Obsada na dzień
+            </div>
+            <button class="day-stats-toggle" id="dayStatsToggleBtn" title="Zwiń / rozwiń">−</button>
+        </div>
+        <div class="day-stats-body" id="dayStatsBody">
+            <div class="day-stats-empty">
+                Kliknij datę w nagłówku, aby zobaczyć obsadę dnia.
+            </div>
+        </div>
+    </aside>
+
+    <!-- Pływające okno: wykres kołowy funkcji na wybrany dzień -->
+    <aside class="func-chart-panel" id="funcChartPanel">
+        <div class="day-stats-header">
+            <div class="day-stats-title">
+                <span class="day-stats-icon">📊</span>
+                Udział funkcji
+            </div>
+            <button class="day-stats-toggle" id="funcChartToggleBtn" title="Zwiń / rozwiń">−</button>
+        </div>
+        <div class="func-chart-body" id="funcChartBody">
+            <div class="day-stats-empty">
+                Kliknij datę w nagłówku, aby zobaczyć wykres.
+            </div>
+        </div>
+    </aside>
+
+    <!-- Modal: dodaj / edytuj pracownika -->
+    <div class="modal-backdrop" id="empModal" hidden>
+        <div class="modal" role="dialog" aria-labelledby="empModalTitle">
+            <div class="modal-header">
+                <h2 id="empModalTitle">Dodaj pracownika</h2>
+                <button class="modal-close" id="empModalCloseBtn" title="Zamknij">×</button>
+            </div>
+            <form id="empForm" novalidate>
+                <label class="form-row">
+                    <span class="form-label">Nazwisko <em>*</em></span>
+                    <input type="text" id="empLastName" maxlength="60" autocomplete="off" required>
+                </label>
+                <label class="form-row">
+                    <span class="form-label">Imię <em>*</em></span>
+                    <input type="text" id="empFirstName" maxlength="60" autocomplete="off" required>
+                </label>
+                <div class="form-row">
+                    <span class="form-label">Funkcje <em class="opt">(można wybrać kilka)</em></span>
+                    <div class="checkbox-group" id="empFuncs"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-ghost" id="empFormCancelBtn">Anuluj</button>
+                    <button type="submit" class="btn btn-primary" id="empFormSubmitBtn">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="popover" id="popover" hidden></div>
+
+    <div class="toast" id="toast" hidden></div>
+
+    <script src="js/holidays.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
