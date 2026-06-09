@@ -420,6 +420,120 @@
     };
   }
 
+  let empInfoHideTimer = null;
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function getEmpFuncs(emp) {
+    return (Array.isArray(emp.funcs) ? emp.funcs : []).map(getFunction).filter(Boolean);
+  }
+
+  function getEmpTrainingsByDept(emp) {
+    const groups = new Map();
+    for (const tr of normalizeTrainingList(emp.trainings, "")) {
+      const dept = getDepartment(tr.dept);
+      const area = getTrainingArea(tr.area);
+      if (!dept || !area) continue;
+      if (!groups.has(dept.id)) groups.set(dept.id, { dept, areas: [] });
+      groups.get(dept.id).areas.push(area);
+    }
+    return Array.from(groups.values()).sort((a, b) => a.dept.label.localeCompare(b.dept.label, "pl"));
+  }
+
+  function renderEmpInfoPopover(emp) {
+    const pop = document.getElementById("empInfoPopover");
+    const funcs = getEmpFuncs(emp);
+    const deptGroups = getEmpTrainingsByDept(emp);
+    const name = getDisplayName(emp);
+
+    let funcRows = "";
+    if (funcs.length === 0) {
+      funcRows = '<tr><td class="emp-info-empty" colspan="2">Brak przypisanych obszarów</td></tr>';
+    } else {
+      funcRows = funcs.map((fn) =>
+        `<tr>
+          <td><span class="emp-info-dot" style="background:${fn.color}"></span></td>
+          <td>${fn.label}</td>
+        </tr>`
+      ).join("");
+    }
+
+    let trainRows = "";
+    if (deptGroups.length === 0) {
+      trainRows = '<tr><td class="emp-info-empty" colspan="2">Brak szkoleń</td></tr>';
+    } else {
+      trainRows = deptGroups.map(({ dept, areas }) => {
+        const areaTags = areas.map((a) =>
+          `<span class="emp-info-area-tag" style="background:${a.color}">${a.short}</span>`
+        ).join("");
+        return `<tr>
+          <td><span class="emp-info-dept" style="background:${dept.color}">${dept.label}</span></td>
+          <td class="emp-info-areas">${areaTags}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    pop.innerHTML = `
+      <div class="emp-info-title">${escapeHtml(name)}</div>
+      <div class="emp-info-grid">
+        <div class="emp-info-section">
+          <div class="emp-info-section-title">Obszary pracy</div>
+          <table class="emp-info-table">
+            <tbody>${funcRows}</tbody>
+          </table>
+        </div>
+        <div class="emp-info-section">
+          <div class="emp-info-section-title">Szkolenia (działy)</div>
+          <table class="emp-info-table">
+            <tbody>${trainRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  function positionEmpInfoPopover(anchor, pop) {
+    const rect = anchor.getBoundingClientRect();
+    pop.hidden = false;
+    const margin = 8;
+    let left = rect.right + margin;
+    let top = rect.top + (rect.height - pop.offsetHeight) / 2;
+
+    if (left + pop.offsetWidth > window.innerWidth - margin) {
+      left = rect.left - pop.offsetWidth - margin;
+    }
+    if (top + pop.offsetHeight > window.innerHeight - margin) {
+      top = window.innerHeight - pop.offsetHeight - margin;
+    }
+    if (top < margin) top = margin;
+
+    pop.style.left = `${Math.round(left)}px`;
+    pop.style.top = `${Math.round(top)}px`;
+  }
+
+  function showEmpInfoPopover(anchorEl, emp) {
+    clearTimeout(empInfoHideTimer);
+    renderEmpInfoPopover(emp);
+    positionEmpInfoPopover(anchorEl, document.getElementById("empInfoPopover"));
+  }
+
+  function hideEmpInfoPopover() {
+    const pop = document.getElementById("empInfoPopover");
+    if (pop) pop.hidden = true;
+  }
+
+  function attachEmpInfoHover(tdName, emp) {
+    tdName.addEventListener("mouseenter", () => showEmpInfoPopover(tdName, emp));
+    tdName.addEventListener("mouseleave", () => {
+      empInfoHideTimer = setTimeout(hideEmpInfoPopover, 150);
+    });
+  }
+
   function getDisplayName(emp) {
     const ln = (emp.lastName  || "").trim();
     const fn = (emp.firstName || "").trim();
@@ -766,7 +880,7 @@
 
       const tdName = document.createElement("td");
       tdName.className = "cell-name col-name";
-      tdName.title = "Kliknij, aby edytować dane pracownika";
+      tdName.title = "Najedź — obszary i szkolenia. Kliknij — edycja.";
       const nameWrap = document.createElement("div");
       nameWrap.className = "name-wrap";
       const nameMain = document.createElement("div");
@@ -775,70 +889,8 @@
       if (display === "(bez nazwiska)") nameMain.classList.add("placeholder");
       nameMain.textContent = display;
       nameWrap.appendChild(nameMain);
-
-      const trainRow = document.createElement("div");
-      trainRow.className = "emp-train-row";
-      const empTrainings = normalizeTrainingList(emp.trainings, "");
-      if (empTrainings.length === 0) {
-        const noTrain = document.createElement("span");
-        noTrain.className = "emp-train-lbl placeholder";
-        noTrain.textContent = "(brak szkoleń)";
-        trainRow.appendChild(noTrain);
-      } else {
-        for (const trn of empTrainings) {
-          const deptObj = getDepartment(trn.dept);
-          const areaObj = getTrainingArea(trn.area);
-          if (!deptObj || !areaObj) continue;
-          const chip = document.createElement("span");
-          chip.className = "train-pill train-pill--compact";
-          chip.title = deptObj.label + " — " + areaObj.label;
-          const deptTag = document.createElement("span");
-          deptTag.className = "train-pill-dept";
-          deptTag.style.background = deptObj.color;
-          deptTag.textContent = deptObj.label;
-          const areaTag = document.createElement("span");
-          areaTag.className = "train-pill-area";
-          areaTag.style.background = areaObj.color;
-          areaTag.textContent = areaObj.short;
-          chip.appendChild(deptTag);
-          chip.appendChild(areaTag);
-          trainRow.appendChild(chip);
-        }
-      }
-      nameWrap.appendChild(trainRow);
-
-      const funcRow = document.createElement("div");
-      funcRow.className = "emp-func-row";
-      const empFuncs = Array.isArray(emp.funcs) ? emp.funcs : [];
-      const fnObjs = empFuncs.map(getFunction).filter(Boolean);
-      if (fnObjs.length === 0) {
-        const noFunc = document.createElement("span");
-        noFunc.className = "emp-func-lbl placeholder";
-        noFunc.textContent = "(bez funkcji)";
-        funcRow.appendChild(noFunc);
-      } else {
-        for (const fn of fnObjs) {
-          const badge = document.createElement("span");
-          badge.className = "func-badge";
-          badge.style.background = fn.color;
-          badge.textContent = fn.short;
-          badge.title = fn.label;
-          funcRow.appendChild(badge);
-        }
-        if (fnObjs.length === 1) {
-          const lbl = document.createElement("span");
-          lbl.className = "emp-func-lbl";
-          lbl.textContent = fnObjs[0].label;
-          funcRow.appendChild(lbl);
-        }
-      }
-      nameWrap.appendChild(funcRow);
-      const editHint = document.createElement("span");
-      editHint.className = "name-edit-hint";
-      editHint.textContent = "✎";
-      editHint.title = "Edytuj pracownika";
-      nameWrap.appendChild(editHint);
       tdName.appendChild(nameWrap);
+      attachEmpInfoHover(tdName, emp);
       tdName.addEventListener("click", () => openEmpModal({ mode: "edit", id: emp.id }));
       trF.appendChild(tdName);
 
@@ -1972,6 +2024,13 @@
     document.getElementById("kalendarzBody").addEventListener("click", onCellClick);
 
     initRowDragDrop();
+
+    const empInfoPop = document.getElementById("empInfoPopover");
+    empInfoPop.addEventListener("mouseenter", () => clearTimeout(empInfoHideTimer));
+    empInfoPop.addEventListener("mouseleave", () => {
+      empInfoHideTimer = setTimeout(hideEmpInfoPopover, 150);
+    });
+    document.getElementById("tableWrap").addEventListener("scroll", hideEmpInfoPopover, { passive: true });
 
     renderCodePicker();
     renderAll();

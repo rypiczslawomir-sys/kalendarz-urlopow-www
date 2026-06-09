@@ -5,36 +5,37 @@
 }
 
 :root {
-    --bg-page:       #0b1220;
-    --bg-card:       #131c2e;
-    --bg-elev:       #243149;
-    --bg-row:        #1c2740;
-    --bg-row-alt:    #21304b;
-    --bg-header:     #0e1729;
-    --border:        #2a3957;
-    --border-soft:   #243149;
+    --bg-page:       #eef2f7;
+    --bg-card:       #ffffff;
+    --bg-elev:       #e8eef5;
+    --bg-row:        #ffffff;
+    --bg-row-alt:    #f8fafc;
+    --bg-header:     #e2e8f0;
+    --bg-row-hover:  #dbeafe;
+    --border:        #cbd5e1;
+    --border-soft:   #e2e8f0;
 
-    --text:          #f1f5f9;
-    --text-strong:   #ffffff;
-    --text-muted:    #b8c2d1;
-    --text-dim:      #7d8aa3;
+    --text:          #1e293b;
+    --text-strong:   #0f172a;
+    --text-muted:    #64748b;
+    --text-dim:      #94a3b8;
 
-    --accent:        #38bdf8;
-    --accent-strong: #0ea5e9;
+    --accent:        #0284c7;
+    --accent-strong: #0369a1;
 
-    /* tło komórek dni roboczych — wyraźnie jaśniejsze od panelu */
-    --workday-bg:    #38445e;
-    --workday-text:  #ffffff;
+    /* tło komórek dni roboczych */
+    --workday-bg:    #ffffff;
+    --workday-text:  #334155;
 
     /* weekendy — neutralny szary */
-    --weekend-bg:    #4a5468;
-    --weekend-text:  #cbd5e1;
+    --weekend-bg:    #e8ecf1;
+    --weekend-text:  #64748b;
 
-    /* święta — szarawo-czerwony */
-    --holiday-bg:    #6a3f47;
-    --holiday-text:  #ffd7da;
+    /* święta — delikatny róż */
+    --holiday-bg:    #fde8e8;
+    --holiday-text:  #b91c1c;
 
-    --today-bg:      #ffb020;
+    --today-bg:      #fbbf24;
     --today-text:    #1c1300;
 
     /* kody absencji (CSS var nazwy ASCII-safe; UŻ → UZ) */
@@ -84,7 +85,7 @@ input, select {
     justify-content: space-between;
     gap: 1rem;
     padding: 0.8rem 1.2rem;
-    background: linear-gradient(to bottom, #0e1729, #0b1220);
+    background: linear-gradient(to bottom, #ffffff, #f1f5f9);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
@@ -168,14 +169,14 @@ input, select {
 .btn-primary {
     background: var(--accent);
     border-color: var(--accent);
-    color: #001a2e;
+    color: #ffffff;
     font-weight: 600;
 }
 
 .btn-primary:hover {
     background: var(--accent-strong);
     border-color: var(--accent-strong);
-    color: #001a2e;
+    color: #ffffff;
 }
 
 .btn .icon {
@@ -334,7 +335,7 @@ input, select {
     left: 0;
     z-index: 200;
     background: var(--bg-page);
-    box-shadow: 10px 0 18px -6px rgba(11, 18, 32, 0.98);
+    box-shadow: 4px 0 14px -4px rgba(15, 23, 42, 0.14);
 }
 
 .cal-scroll {
@@ -356,9 +357,10 @@ input, select {
     background: transparent;
 }
 
-.kalendarz tbody tr.row-sync-hover td,
+/* podświetlenie wiersza — bez nadpisywania kolorów w komórkach dni */
+.kalendarz tbody tr.row-sync-hover td:not(.day-cell),
 .kalendarz tbody tr.row-sync-hover th {
-    background-color: var(--bg-elev);
+    background-color: var(--bg-row-hover);
 }
 
 table.kalendarz {
@@ -461,7 +463,7 @@ table.kalendarz.kalendarz-scroll {
 
 .week-header {
     text-align: center;
-    background: #121c30;
+    background: #d8e0ea;
     color: var(--text-dim);
     font-size: 0.7rem;
     font-weight: 600;
@@ -471,8 +473,8 @@ table.kalendarz.kalendarz-scroll {
 }
 
 .week-header.week-one {
-    background: #152238;
-    color: var(--accent);
+    background: #cfe8f8;
+    color: var(--accent-strong);
     font-weight: 800;
     font-size: 0.75rem;
     border-bottom: 2px solid var(--accent);
@@ -548,7 +550,7 @@ table.kalendarz.kalendarz-scroll {
 }
 
 .kalendarz-frozen tbody tr.row-sync-hover td {
-    background-color: var(--bg-elev);
+    background-color: var(--bg-row-hover);
 }
 
 .kalendarz-scroll thead th.month-header {
@@ -556,7 +558,7 @@ table.kalendarz.kalendarz-scroll {
 }
 
 .kalendarz-scroll thead th.week-header {
-    background-color: #121c30 !important;
+    background-color: #d8e0ea !important;
 }
 
 .kalendarz thead tr.row-months th.fixed-cell,
@@ -606,11 +608,25 @@ table.kalendarz.kalendarz-scroll {
 .kalendarz-frozen tbody tr.row-sync-hover .col-wyk,
 .kalendarz-frozen tbody tr.row-sync-hover .col-l4,
 .kalendarz-frozen tbody tr.row-sync-hover .col-actions {
-    background-color: var(--bg-elev);
+    background-color: var(--bg-row-hover);
 }
 
-.kalendarz-scroll tbody tr.row-sync-hover .day-cell {
-    filter: brightness(1.08);
+.kalendarz-scroll tbody tr.row-sync-hover .day-cell:not([data-code]) {
+    background-color: color-mix(in srgb, var(--accent) 7%, var(--workday-bg));
+}
+
+.kalendarz-scroll tbody tr.row-sync-hover .day-cell.weekend:not([data-code]) {
+    background-color: color-mix(in srgb, var(--accent) 7%, var(--weekend-bg));
+}
+
+.kalendarz-scroll tbody tr.row-sync-hover .day-cell.holiday:not([data-code]) {
+    background-color: color-mix(in srgb, var(--accent) 7%, var(--holiday-bg));
+}
+
+.kalendarz-scroll tbody tr.row-sync-hover .day-cell[data-code] {
+    box-shadow: inset 0 0 0 2px var(--accent);
+    position: relative;
+    z-index: 2;
 }
 
 /* Tła kolumn pula+wyk barwione tintem koloru danego kodu */
@@ -642,7 +658,7 @@ tr:nth-child(even) .cell-pool[data-code] {
     background-color: color-mix(in srgb, var(--tint) 7%, var(--bg-row-alt));
 }
 tr:hover .cell-pool[data-code] {
-    background-color: color-mix(in srgb, var(--tint) 10%, var(--bg-elev));
+    background-color: color-mix(in srgb, var(--tint) 10%, var(--bg-row-hover));
 }
 
 /* body – wykorzystane (ciemniejsze tło — kontrast względem puli) */
@@ -653,7 +669,7 @@ tr:nth-child(even) .cell-wyk[data-code] {
     background-color: color-mix(in srgb, var(--tint) 24%, var(--bg-row-alt));
 }
 tr:hover .cell-wyk[data-code] {
-    background-color: color-mix(in srgb, var(--tint) 30%, var(--bg-elev));
+    background-color: color-mix(in srgb, var(--tint) 30%, var(--bg-row-hover));
 }
 
 /* L4 – też tint, opaque */
@@ -664,7 +680,7 @@ tr:nth-child(even) .cell-l4[data-code] {
     background-color: color-mix(in srgb, var(--tint) 16%, var(--bg-row-alt));
 }
 tr:hover .cell-l4[data-code] {
-    background-color: color-mix(in srgb, var(--tint) 22%, var(--bg-elev));
+    background-color: color-mix(in srgb, var(--tint) 22%, var(--bg-row-hover));
 }
 
 /* gruby separator po parze pula+wyk. */
@@ -805,49 +821,34 @@ tr:hover .cell-l4[data-code] {
 
 .cell-name {
     text-align: left;
-    padding: 0 0.6rem;
+    padding: 0 0.55rem;
     cursor: pointer;
     transition: background 0.12s;
     position: relative;
 }
 
 .cell-name:hover {
-    background: var(--bg-elev) !important;
+    background: var(--bg-row-hover) !important;
     box-shadow: inset 0 0 0 1px var(--accent);
-}
-
-.cell-name:hover .name-edit-hint {
-    opacity: 1;
-    color: var(--accent);
 }
 
 .name-wrap {
     display: flex;
-    flex-direction: column;
-    gap: 1px;
+    align-items: center;
+    min-height: var(--row-h);
     line-height: 1.2;
-    padding-right: 1.1rem;
-}
-
-.name-edit-hint {
-    position: absolute;
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.85rem;
-    color: var(--text-dim);
-    opacity: 0.35;
-    transition: opacity 0.12s, color 0.12s;
-    pointer-events: none;
 }
 
 .emp-name {
     color: var(--text-strong);
-    font-size: 1rem;
+    font-size: 1.18rem;
     font-weight: 600;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.22;
+    word-break: break-word;
 }
 
 .emp-name.placeholder {
@@ -1018,15 +1019,15 @@ tr:hover .cell-l4[data-code] {
 
 /* pula = 0 — wyraźnie wyłączona, nieprzezroczyste tło */
 .cell-pool.pool-zero {
-    background-color: #232b3d !important;
+    background-color: #e8edf3 !important;
     background-image: repeating-linear-gradient(
         -45deg,
-        #232b3d,
-        #232b3d 4px,
-        #2a3348 4px,
-        #2a3348 8px
+        #e8edf3,
+        #e8edf3 4px,
+        #dde4ec 4px,
+        #dde4ec 8px
     ) !important;
-    box-shadow: inset 0 0 0 1px #475569 !important;
+    box-shadow: inset 0 0 0 1px #94a3b8 !important;
 }
 
 .cell-pool.pool-zero input {
@@ -1036,13 +1037,13 @@ tr:hover .cell-l4[data-code] {
 }
 
 tr:nth-child(even) .cell-pool.pool-zero {
-    background-color: #1f2738 !important;
+    background-color: #e2e8f0 !important;
     background-image: repeating-linear-gradient(
         -45deg,
-        #1f2738,
-        #1f2738 4px,
-        #263044 4px,
-        #263044 8px
+        #e2e8f0,
+        #e2e8f0 4px,
+        #d5dde8 4px,
+        #d5dde8 8px
     ) !important;
 }
 
@@ -1067,9 +1068,9 @@ tr:nth-child(even) .cell-wyk.usage-clear {
 
 /* wykorzystano w limicie — wyraźna zieleń (nieprzezroczysta) */
 .cell-wyk.usage-active {
-    background-color: #134e4a !important;
-    background-image: linear-gradient(135deg, #166654 0%, #134e4a 100%) !important;
-    color: #bbf7d0 !important;
+    background-color: #d1fae5 !important;
+    background-image: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%) !important;
+    color: #065f46 !important;
     font-weight: 700 !important;
     box-shadow: inset 0 0 0 1px #34d399,
                 inset 3px 0 0 #10b981 !important;
@@ -1077,8 +1078,8 @@ tr:nth-child(even) .cell-wyk.usage-clear {
 
 tr:nth-child(even) .cell-wyk.usage-active,
 tr:hover .cell-wyk.usage-active {
-    background-color: #145c52 !important;
-    background-image: linear-gradient(135deg, #177a62 0%, #145c52 100%) !important;
+    background-color: #bbf7d0 !important;
+    background-image: linear-gradient(135deg, #d1fae5 0%, #bbf7d0 100%) !important;
 }
 
 /* pula w pełni wykorzystana (w limicie) — mocniejsza zieleń */
@@ -1092,36 +1093,36 @@ tr:hover .cell-wyk.usage-active {
 
 /* pula wyłączona (0) — przekreślony symbol, pasy (nieprzezroczyste) */
 .cell-wyk.pool-disabled {
-    background-color: #232b3d !important;
+    background-color: #e8edf3 !important;
     background-image: repeating-linear-gradient(
         -45deg,
-        #232b3d,
-        #232b3d 3px,
-        #2a3348 3px,
-        #2a3348 6px
+        #e8edf3,
+        #e8edf3 3px,
+        #dde4ec 3px,
+        #dde4ec 6px
     ) !important;
-    color: #64748b !important;
+    color: #94a3b8 !important;
     font-size: 1.15rem !important;
     font-weight: 400 !important;
     box-shadow: inset 0 0 0 1px #64748b !important;
 }
 
 tr:nth-child(even) .cell-wyk.pool-disabled {
-    background-color: #1f2738 !important;
+    background-color: #e2e8f0 !important;
     background-image: repeating-linear-gradient(
         -45deg,
-        #1f2738,
-        #1f2738 3px,
-        #263044 3px,
-        #263044 6px
+        #e2e8f0,
+        #e2e8f0 3px,
+        #d5dde8 3px,
+        #d5dde8 6px
     ) !important;
 }
 
 /* L4 z wykorzystaniem — też zielony (nieprzezroczysty) */
 .cell-l4.usage-active {
-    background-color: #134e4a !important;
-    background-image: linear-gradient(135deg, #166654 0%, #134e4a 100%) !important;
-    color: #6ee7b7 !important;
+    background-color: #d1fae5 !important;
+    background-image: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%) !important;
+    color: #065f46 !important;
     box-shadow: inset 0 0 0 1px #34d399 !important;
 }
 
@@ -1350,11 +1351,11 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
 }
 
 .month-header.odd-month {
-    background: #0e1729;
+    background: #e8edf3;
 }
 
 .month-header.even-month {
-    background: #131c2e;
+    background: #f1f5f9;
 }
 
 /* ─── summary ────────────────────────────────────────────────────────── */
@@ -1393,6 +1394,122 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     font-weight: 700;
 }
 
+/* ─── podpowiedź pracownika (obszary + szkolenia) ───────────────────── */
+
+.emp-info-popover {
+    position: fixed;
+    z-index: 250;
+    min-width: 420px;
+    max-width: min(92vw, 560px);
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 0.65rem 0.75rem 0.75rem;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+    pointer-events: auto;
+}
+
+.emp-info-popover[hidden] {
+    display: none;
+}
+
+.emp-info-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-strong);
+    margin-bottom: 0.55rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.emp-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+}
+
+.emp-info-section-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+}
+
+.emp-info-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.emp-info-table td {
+    padding: 4px 0;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-soft);
+    color: var(--text);
+}
+
+.emp-info-table tr:last-child td {
+    border-bottom: none;
+}
+
+.emp-info-table td:first-child {
+    width: 28px;
+    padding-right: 6px;
+}
+
+.emp-info-empty {
+    color: var(--text-dim) !important;
+    font-style: italic;
+    padding: 6px 0 !important;
+}
+
+.emp-info-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12);
+}
+
+.emp-info-dept {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+}
+
+.emp-info-areas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.emp-info-area-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+}
+
+@media (max-width: 520px) {
+    .emp-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ─── popover ────────────────────────────────────────────────────────── */
 
 .popover {
@@ -1402,7 +1519,7 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     border: 1px solid var(--accent);
     border-radius: 8px;
     padding: 0.5rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
     display: flex;
     gap: 0.3rem;
 }
@@ -1423,7 +1540,7 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     color: var(--text-strong);
     padding: 0.7rem 1.2rem;
     border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
     z-index: 200;
     font-size: 0.9rem;
     max-width: min(92vw, 520px);
@@ -1468,7 +1585,7 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
 .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(8, 12, 24, 0.65);
+    background: rgba(15, 23, 42, 0.35);
     backdrop-filter: blur(2px);
     z-index: 300;
     display: flex;
@@ -1493,7 +1610,7 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
     overflow: hidden;
 }
 
@@ -1757,7 +1874,7 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 10px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
     z-index: 80;
     font-size: 0.85rem;
     overflow: hidden;
@@ -2096,7 +2213,7 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 10px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
     z-index: 80;
     font-size: 0.85rem;
     overflow: hidden;
@@ -2188,7 +2305,7 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 10px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
     z-index: 80;
     font-size: 0.85rem;
     overflow: hidden;
@@ -2224,7 +2341,7 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     border-radius: 50%;
     flex-shrink: 0;
     position: relative;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
 }
 
 .func-chart-hole {

@@ -1,14 +1,14 @@
 *, *::before, *::after { box-sizing: border-box; }
 
 :root {
-    --bg-page: #0b1220;
-    --bg-card: #131c2e;
-    --border: #2a3957;
-    --text: #f1f5f9;
-    --text-muted: #b8c2d1;
-    --accent: #38bdf8;
-    --accent-strong: #0ea5e9;
-    --danger: #f87171;
+    --bg-page: #eef2f7;
+    --bg-card: #ffffff;
+    --border: #cbd5e1;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --accent: #0284c7;
+    --accent-strong: #0369a1;
+    --danger: #ef4444;
 }
 
 html, body {
@@ -34,7 +34,7 @@ html, body {
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 2rem 1.75rem;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 16px 48px rgba(15, 23, 42, 0.12);
 }
 
 .login-brand {

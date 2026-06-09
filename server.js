@@ -14,8 +14,8 @@ const AUTH_PASSWORD = process.env.AUTH_PASSWORD || "";
 const SESSION_SECRET = process.env.SESSION_SECRET || "dev-only-change-me-in-production";
 const IS_PROD = process.env.NODE_ENV === "production";
 
-if (IS_PROD && (!AUTH_PASSWORD || AUTH_PASSWORD.length < 8)) {
-  console.error("Ustaw AUTH_PASSWORD (min. 8 znaków) przed uruchomieniem w produkcji.");
+if (IS_PROD && (!AUTH_PASSWORD || AUTH_PASSWORD.length < 4)) {
+  console.error("Ustaw AUTH_PASSWORD (min. 4 znaki) przed uruchomieniem w produkcji.");
   process.exit(1);
 }
 

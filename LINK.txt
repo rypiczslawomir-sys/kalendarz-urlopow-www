@@ -1,0 +1,16 @@
+Kalendarz urlopowy — stały adres w internecie
+=============================================
+
+Adres logowania:
+https://kalendarz-urlopow.onrender.com/login.html
+
+Login: admin
+Hasło: 1947
+
+Dane (pracownicy, urlopy) są zapisywane wspólnie w GitHub Gist —
+każdy kto się zaloguje widzi te same dane z dowolnego komputera.
+
+Uwaga: pierwsze wejście po bezczynności może trwać ok. 30–60 s
+(darmowy plan Render „budzi” serwer).
+
+Zaktualizowano: 2026-06-09
