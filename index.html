@@ -139,6 +139,10 @@
                     <span class="form-label">Imię <em>*</em></span>
                     <input type="text" id="empFirstName" maxlength="60" autocomplete="off" required>
                 </label>
+                <label class="form-row">
+                    <span class="form-label">Nr AIN <em class="opt">(10 cyfr — opcjonalnie)</em></span>
+                    <input type="text" id="empAin" maxlength="10" inputmode="numeric" pattern="[0-9]{10}" autocomplete="off" placeholder="1234567890">
+                </label>
                 <div class="form-row form-row--trainings">
                     <span class="form-label">Szkolenia <em class="opt">(dział + obszar — można dodać wiele)</em></span>
                     <div class="train-editor" id="empTrainEditor">

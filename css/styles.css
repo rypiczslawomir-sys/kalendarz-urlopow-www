@@ -1417,15 +1417,38 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     font-size: 1rem;
     font-weight: 700;
     color: var(--text-strong);
-    margin-bottom: 0.55rem;
-    padding-bottom: 0.45rem;
-    border-bottom: 1px solid var(--border-soft);
+    margin-bottom: 0.35rem;
+}
+
+.emp-info-ain {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+}
+
+.emp-info-ain-label {
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.68rem;
+}
+
+.emp-info-ain-value {
+    font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--text-strong);
 }
 
 .emp-info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.65rem;
+    margin-top: 0.55rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid var(--border-soft);
 }
 
 .emp-info-section-title {

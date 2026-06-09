@@ -5,7 +5,7 @@
 
   // ─── konfiguracja ─────────────────────────────────────────────────────
   const STORAGE_KEY = "kalendarz-urlopow-v1";
-  const STATE_VERSION = 7;
+  const STATE_VERSION = 8;
   const YEAR_MIN = 2024;
   const YEAR_MAX = 2060;
 
@@ -104,10 +104,15 @@
     return out;
   }
 
+  function normalizeAin(raw) {
+    return String(raw || "").replace(/\D/g, "").slice(0, 10);
+  }
+
   function normalizeEmployeeFields(emp) {
     const legacyDept = typeof emp.dept === "string" ? emp.dept : "";
     emp.trainings = normalizeTrainingList(emp.trainings, legacyDept);
     if ("dept" in emp) delete emp.dept;
+    emp.ain = normalizeAin(emp.ain);
   }
 
   const POLISH_MONTHS = [
@@ -345,6 +350,15 @@
       }
       s.version = 7;
     }
+
+    // v7 → v8: numer AIN pracownika (10 cyfr)
+    if (s.version === 7) {
+      for (const emp of s.employees || []) {
+        if (typeof emp.ain !== "string") emp.ain = "";
+        emp.ain = normalizeAin(emp.ain);
+      }
+      s.version = 8;
+    }
   }
 
   // ─── helpery: wartość komórki (string lub obiekt {code, h}) ───────────
@@ -413,6 +427,7 @@
       id: createId(),
       lastName:  opts.lastName  || "",
       firstName: opts.firstName || "",
+      ain:       normalizeAin(opts.ain),
       funcs:     Array.isArray(opts.funcs) ? opts.funcs.slice() : [],
       trainings: normalizeTrainingList(opts.trainings, ""),
       pools,
@@ -451,6 +466,10 @@
     const funcs = getEmpFuncs(emp);
     const deptGroups = getEmpTrainingsByDept(emp);
     const name = getDisplayName(emp);
+    const ain = normalizeAin(emp.ain);
+    const ainRow = ain
+      ? `<div class="emp-info-ain"><span class="emp-info-ain-label">Nr AIN</span><span class="emp-info-ain-value">${escapeHtml(ain)}</span></div>`
+      : "";
 
     let funcRows = "";
     if (funcs.length === 0) {
@@ -481,6 +500,7 @@
 
     pop.innerHTML = `
       <div class="emp-info-title">${escapeHtml(name)}</div>
+      ${ainRow}
       <div class="emp-info-grid">
         <div class="emp-info-section">
           <div class="emp-info-section-title">Obszary pracy</div>
@@ -1371,6 +1391,7 @@
     const titleEl    = document.getElementById("empModalTitle");
     const lnInput    = document.getElementById("empLastName");
     const fnInput    = document.getElementById("empFirstName");
+    const ainInput   = document.getElementById("empAin");
     const submitBtn  = document.getElementById("empFormSubmitBtn");
 
     if (empModalCtx.mode === "edit") {
@@ -1380,6 +1401,7 @@
       submitBtn.textContent = "Zapisz zmiany";
       lnInput.value = emp.lastName  || "";
       fnInput.value = emp.firstName || "";
+      ainInput.value = normalizeAin(emp.ain);
       populateTrainDeptSelect();
       setModalTrainings(emp.trainings);
       buildFuncCheckboxes(Array.isArray(emp.funcs) ? emp.funcs : []);
@@ -1388,6 +1410,7 @@
       submitBtn.textContent = "Dodaj";
       lnInput.value = "";
       fnInput.value = "";
+      ainInput.value = "";
       populateTrainDeptSelect();
       setModalTrainings([]);
       buildFuncCheckboxes([]);
@@ -1408,20 +1431,28 @@
     if (e) e.preventDefault();
     const lnInput = document.getElementById("empLastName");
     const fnInput = document.getElementById("empFirstName");
+    const ainInput = document.getElementById("empAin");
 
     const lastName  = lnInput.value.trim();
     const firstName = fnInput.value.trim();
+    const ain       = normalizeAin(ainInput.value);
     const trainings = empModalTrainings.slice();
     const funcs     = readSelectedFuncs();
 
     if (!lastName)  { lnInput.focus(); showToast("Nazwisko jest wymagane"); return; }
     if (!firstName) { fnInput.focus(); showToast("Imię jest wymagane");    return; }
+    if (ain && ain.length !== 10) {
+      ainInput.focus();
+      showToast("Nr AIN musi mieć dokładnie 10 cyfr");
+      return;
+    }
 
     if (empModalCtx && empModalCtx.mode === "edit") {
       const emp = state.employees.find((x) => x.id === empModalCtx.id);
       if (emp) {
         emp.lastName  = lastName;
         emp.firstName = firstName;
+        emp.ain       = ain;
         emp.trainings = trainings;
         emp.funcs     = funcs;
       }
@@ -1430,7 +1461,7 @@
       renderAll();
       showToast("Zapisano zmiany");
     } else {
-      state.employees.push(makeEmployee({ lastName, firstName, trainings, funcs }));
+      state.employees.push(makeEmployee({ lastName, firstName, ain, trainings, funcs }));
       saveState();
       closeEmpModal();
       renderAll();
@@ -1973,6 +2004,10 @@
     document.getElementById("empModalCloseBtn").addEventListener("click", closeEmpModal);
     document.getElementById("empFormCancelBtn").addEventListener("click", closeEmpModal);
     document.getElementById("empForm").addEventListener("submit", submitEmpForm);
+    document.getElementById("empAin").addEventListener("input", (e) => {
+      const cleaned = normalizeAin(e.target.value);
+      if (e.target.value !== cleaned) e.target.value = cleaned;
+    });
     document.getElementById("trainAddDept").addEventListener("change", syncTrainAreaSelect);
     document.getElementById("trainAddBtn").addEventListener("click", addModalTraining);
     populateTrainDeptSelect();
