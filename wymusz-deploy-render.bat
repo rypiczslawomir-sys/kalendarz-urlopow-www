@@ -9,10 +9,10 @@ echo   WYMUS DEPLOY NA RENDER (jednorazowo po pushu na GitHub)
 echo ============================================================
 echo.
 echo 1. Zaloguj sie do Render (GitHub).
-echo 2. Otworz usluge: kalendarz-urlopow
-echo 3. Kliknij: Manual Deploy ^> Clear build cache ^& deploy
+echo 2. Otworz usluge: kalendarz-urlopow-9vvb
+echo 3. Kliknij: Manual Deploy ^> Deploy latest commit
 echo 4. Po 2-5 min sprawdz:
-echo    https://kalendarz-urlopow.onrender.com/login.html
+echo    https://kalendarz-urlopow-9vvb.onrender.com/login.html
 echo    login: admin   haslo: 1947
 echo.
 echo Opcja API (bez klikania):

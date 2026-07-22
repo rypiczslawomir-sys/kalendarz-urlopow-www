@@ -3,7 +3,7 @@
 
 const API_KEY = process.env.RENDER_API_KEY || "";
 const SERVICE_ID = process.env.RENDER_SERVICE_ID || "";
-const SERVICE_NAME = process.env.RENDER_SERVICE_NAME || "kalendarz-urlopow";
+const SERVICE_NAME = process.env.RENDER_SERVICE_NAME || "kalendarz-urlopow-9vvb";
 
 async function api(path, options = {}) {
   const res = await fetch(`https://api.render.com/v1${path}`, {

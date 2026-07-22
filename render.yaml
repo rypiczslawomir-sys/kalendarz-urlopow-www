@@ -6,7 +6,7 @@ services:
     region: frankfurt
     repo: https://github.com/rypiczslawomir-sys/kalendarz-urlopow-www
     branch: main
-    buildCommand: npm install
+    buildCommand: npm install --omit=dev
     startCommand: npm start
     healthCheckPath: /login.html
     envVars:

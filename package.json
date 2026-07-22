@@ -2,9 +2,12 @@
   "name": "kalendarz-urlopow-www",
   "version": "1.0.0",
   "private": true,
-  "description": "Kalendarz urlopowy — aplikacja webowa z logowaniem",
+  "description": "Kalendarz urlopowy — aplikacja webowa z logowaniem i wersja desktopowa",
+  "main": "electron-main.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "desktop": "electron .",
+    "dist": "electron-builder --win nsis"
   },
   "engines": {
     "node": ">=18"
@@ -14,5 +17,43 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-session": "^1.18.1"
+  },
+  "devDependencies": {
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "pl.kalendarz.urlopowy",
+    "productName": "Kalendarz urlopowy",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron-main.js",
+      "server.js",
+      "index.html",
+      "login.html",
+      "lib/**",
+      "js/**",
+      "css/**",
+      "package.json",
+      "node_modules/**",
+      "!node_modules/.cache/**",
+      "!dist/**",
+      "!data/**",
+      "!scripts/**",
+      "!*.bat",
+      "!.env*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Kalendarz urlopowy"
+    }
   }
 }

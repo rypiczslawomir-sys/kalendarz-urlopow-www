@@ -19,6 +19,8 @@ const ENV_AUTH_USER = (process.env.AUTH_USER || "admin").trim();
 const ENV_AUTH_PASSWORD = process.env.AUTH_PASSWORD || "";
 const SESSION_SECRET = process.env.SESSION_SECRET || "dev-only-change-me-in-production";
 const IS_PROD = process.env.NODE_ENV === "production";
+// Tryb desktopowy (Electron): lokalna aplikacja bez logowania, dane w pliku
+const DESKTOP = process.env.DESKTOP_MODE === "1";
 
 if (IS_PROD && SESSION_SECRET === "dev-only-change-me-in-production") {
   console.error("Ustaw SESSION_SECRET przed uruchomieniem w produkcji.");
@@ -43,6 +45,7 @@ function isLoggedIn(req) {
 }
 
 function requireAuth(req, res, next) {
+  if (DESKTOP) return next();
   if (isLoggedIn(req)) return next();
   if (req.path.startsWith("/api/")) {
     return res.status(401).json({ error: "Wymagane logowanie" });
@@ -103,7 +106,7 @@ function registerRoutes() {
   });
 
   app.get("/login.html", (req, res) => {
-    if (isLoggedIn(req)) return res.redirect("/");
+    if (DESKTOP || isLoggedIn(req)) return res.redirect("/");
     res.sendFile(path.join(ROOT, "login.html"));
   });
 
@@ -131,7 +134,7 @@ function registerRoutes() {
     }
   });
 
-  app.put("/api/state", (req, res) => {
+  app.put("/api/state", async (req, res) => {
     const body = req.body;
     if (!body || typeof body !== "object" || !Array.isArray(body.employees)) {
       return res.status(400).json({ error: "Nieprawidłowy format danych" });
@@ -140,6 +143,10 @@ function registerRoutes() {
     // konto GitHub przed limitem częstych zapisów.
     cachedState = body;
     dirty = true;
+    // W trybie plikowym (desktop/lokalnie) zapis jest tani — od razu na dysk.
+    if (storageMode() === "file") {
+      try { await flushStateToStorage(); } catch (e) { /* interwał ponowi */ }
+    }
     res.json({ ok: true });
   });
 
@@ -194,14 +201,22 @@ async function bootstrap() {
 
   registerRoutes();
 
-  app.listen(PORT, () => {
-    ensureDataDir();
-    console.log(`Kalendarz urlopowy: port ${PORT} | storage: ${storageMode()}`);
-    if (!IS_PROD) console.log(`Login: ${authUser} / ${password || "admin"}`);
+  await new Promise((resolve) => {
+    app.listen(PORT, () => {
+      ensureDataDir();
+      console.log(`Kalendarz urlopowy: port ${PORT} | storage: ${storageMode()} | desktop: ${DESKTOP}`);
+      if (!IS_PROD && !DESKTOP) console.log(`Login: ${authUser} / ${password || "admin"}`);
+      resolve();
+    });
   });
 }
 
-bootstrap().catch((e) => {
-  console.error("Błąd startu serwera:", e);
-  process.exit(1);
-});
+// Uruchom bezpośrednio (node server.js); w Electronie bootstrap woła electron-main.js
+if (require.main === module) {
+  bootstrap().catch((e) => {
+    console.error("Błąd startu serwera:", e);
+    process.exit(1);
+  });
+}
+
+module.exports = { bootstrap };
