@@ -26,6 +26,10 @@
                 <span class="icon">+</span> Dodaj pracownika
             </button>
 
+            <button class="btn btn-ghost" id="printBtn" title="Wydrukuj roczny kalendarz pracownika">
+                🖨 Drukuj
+            </button>
+
             <button class="btn btn-ghost" id="exportBtn" title="Zapisz dane do pliku .json">
                 ⬇ Eksport
             </button>
@@ -163,6 +167,26 @@
                     <button type="submit" class="btn btn-primary" id="empFormSubmitBtn">Zapisz</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal: wydruk kalendarza pracownika -->
+    <div class="modal-backdrop" id="printModal" hidden>
+        <div class="modal" role="dialog" aria-labelledby="printModalTitle">
+            <div class="modal-header">
+                <h2 id="printModalTitle">Wydruk kalendarza urlopowego</h2>
+                <button class="modal-close" id="printModalCloseBtn" title="Zamknij">×</button>
+            </div>
+            <label class="form-row">
+                <span class="form-label">Pracownik</span>
+                <select id="printEmpSelect"></select>
+            </label>
+            <p class="print-note">Rok wydruku: <b id="printYearInfo"></b> — zmienisz go selektorem „Rok" w nagłówku strony.</p>
+            <p class="print-note">Na wydruku: cały rok z urlopami wypoczynkowymi (U), dodatkowymi (D) i na żądanie (UŻ) oraz tabela wykorzystania.</p>
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" id="printCancelBtn">Anuluj</button>
+                <button type="button" class="btn btn-primary" id="printGoBtn">🖨 Drukuj</button>
+            </div>
         </div>
     </div>
 

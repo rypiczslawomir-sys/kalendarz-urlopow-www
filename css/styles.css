@@ -1989,6 +1989,17 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     color: var(--text-strong);
 }
 
+.print-note {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin: 0.2rem 0;
+}
+
+.print-note b {
+    color: var(--text-strong);
+}
+
 .form-actions {
     display: flex;
     justify-content: flex-end;

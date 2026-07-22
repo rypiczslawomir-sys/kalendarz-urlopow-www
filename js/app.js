@@ -2016,6 +2016,207 @@
     body.appendChild(table);
   }
 
+  // ─── wydruk rocznego kalendarza pracownika ────────────────────────────
+  // Na wydruku pokazujemy urlopy planowane: wypoczynkowy, dodatkowy, na żądanie
+  const PRINT_CODES = ["U", "D", "UŻ"];
+  const PRINT_COLORS = {
+    "U":  { bg: "#10b981", fg: "#042f1f" },
+    "D":  { bg: "#84cc16", fg: "#1a2400" },
+    "UŻ": { bg: "#f59e0b", fg: "#2a1c00" },
+  };
+
+  function openPrintModal() {
+    if (!state.employees.length) {
+      showToast("Brak pracowników do wydruku");
+      return;
+    }
+    const sel = document.getElementById("printEmpSelect");
+    sel.innerHTML = "";
+    for (const emp of state.employees) {
+      const opt = document.createElement("option");
+      opt.value = emp.id;
+      opt.textContent = getDisplayName(emp);
+      sel.appendChild(opt);
+    }
+    document.getElementById("printYearInfo").textContent = state.year;
+    document.getElementById("printModal").hidden = false;
+  }
+
+  function closePrintModal() {
+    document.getElementById("printModal").hidden = true;
+  }
+
+  function printEmployeeCalendar() {
+    const sel = document.getElementById("printEmpSelect");
+    const emp = state.employees.find((e) => e.id === sel.value);
+    if (!emp) return;
+    closePrintModal();
+    const win = window.open("", "_blank");
+    if (!win) {
+      showToast("Przeglądarka zablokowała okno wydruku — zezwól na wyskakujące okna");
+      return;
+    }
+    win.document.write(buildPrintHTML(emp, state.year));
+    win.document.close();
+  }
+
+  function buildPrintHTML(emp, year) {
+    const holMap = H.holidayMap(year);
+    const dows = ["pn", "wt", "śr", "cz", "pt", "so", "nd"];
+
+    let monthsHtml = "";
+    for (let m = 0; m < 12; m++) {
+      const daysInMonth = new Date(year, m + 1, 0).getDate();
+      const offset = (new Date(year, m, 1).getDay() + 6) % 7; // pn = 0
+      const cells = [];
+      for (let i = 0; i < offset; i++) cells.push('<td class="empty"></td>');
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const d = new Date(year, m, day);
+        const key = H.dateKey(d);
+        const code = getCode(emp.days[key]);
+        let cls = "";
+        let style = "";
+        if (code && PRINT_COLORS[code]) {
+          const c = PRINT_COLORS[code];
+          style = `background:${c.bg};color:${c.fg};font-weight:700;`;
+        } else if (holMap.has(key)) {
+          cls = "hol";
+        } else if (H.isWeekend(d)) {
+          cls = "wkd";
+        }
+        cells.push(`<td class="${cls}" style="${style}">${day}</td>`);
+      }
+      while (cells.length % 7 !== 0) cells.push('<td class="empty"></td>');
+
+      let rows = "";
+      for (let i = 0; i < cells.length; i += 7) {
+        rows += "<tr>" + cells.slice(i, i + 7).join("") + "</tr>";
+      }
+      monthsHtml += `
+        <div class="pm">
+          <div class="pm-t">${POLISH_MONTHS[m]}</div>
+          <table>
+            <thead><tr>${dows.map((x) => `<th class="${x === "so" || x === "nd" ? "wkd-h" : ""}">${x}</th>`).join("")}</tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    let sumRows = "";
+    let sumPool = 0, sumUsed = 0;
+    for (const code of PRINT_CODES) {
+      const cDef = CODES.find((x) => x.code === code);
+      const { days } = getUsage(emp, code, year);
+      const pool = typeof emp.pools[code] === "number" ? emp.pools[code] : 0;
+      const left = Math.max(0, pool - days);
+      sumPool += pool;
+      sumUsed += days;
+      sumRows += `<tr>
+        <td class="lbl"><span class="chip" style="background:${PRINT_COLORS[code].bg}"></span>${cDef.label} (${code})</td>
+        <td>${pool}</td>
+        <td>${formatUsage(days)}</td>
+        <td><b>${formatUsage(left)}</b></td>
+      </tr>`;
+    }
+    sumRows += `<tr class="tot">
+      <td class="lbl">Razem</td>
+      <td>${sumPool}</td>
+      <td>${formatUsage(sumUsed)}</td>
+      <td><b>${formatUsage(Math.max(0, sumPool - sumUsed))}</b></td>
+    </tr>`;
+
+    const legend = PRINT_CODES.map((code) => {
+      const cDef = CODES.find((x) => x.code === code);
+      return `<span class="lg"><span class="chip" style="background:${PRINT_COLORS[code].bg}"></span>${cDef.label} (${code})</span>`;
+    }).join("");
+
+    const name = escapeHtml(getDisplayName(emp));
+
+    return `<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Kalendarz urlopowy ${year} — ${name}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: #0f172a; padding: 8mm; }
+  @page { size: A4 portrait; margin: 8mm; }
+  @media print { body { padding: 0; } .no-print { display: none; } }
+
+  .head { display: flex; justify-content: space-between; align-items: baseline;
+          border-bottom: 2px solid #0f172a; padding-bottom: 3mm; margin-bottom: 4mm; }
+  .head h1 { font-size: 14pt; }
+  .head .yr { font-size: 12pt; font-weight: 700; }
+  .head .sub { font-size: 8pt; color: #64748b; }
+
+  .legend { display: flex; gap: 5mm; flex-wrap: wrap; font-size: 8pt; margin-bottom: 3mm; }
+  .lg { display: inline-flex; align-items: center; gap: 1.5mm; }
+  .chip { display: inline-block; width: 3.2mm; height: 3.2mm; border-radius: 1mm;
+          border: 0.2mm solid rgba(15,23,42,0.25); }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2.5mm; }
+  .pm-t { font-size: 8.5pt; font-weight: 700; text-align: center; padding: 1mm 0;
+          background: #e2e8f0; border: 0.2mm solid #cbd5e1; border-bottom: none; }
+  .pm table { width: 100%; border-collapse: collapse; }
+  .pm th { font-size: 6.5pt; color: #64748b; border: 0.2mm solid #e2e8f0;
+           padding: 0.5mm 0; font-weight: 600; background: #f8fafc; }
+  .pm th.wkd-h { color: #b91c1c; }
+  .pm td { font-size: 7.5pt; text-align: center; border: 0.2mm solid #e2e8f0;
+           height: 5.2mm; vertical-align: middle; }
+  .pm td.wkd { background: #eef1f5; color: #94a3b8; }
+  .pm td.hol { background: #fde8e8; color: #b91c1c; }
+  .pm td.empty { background: #fff; border-color: #f1f5f9; }
+
+  .sum { margin-top: 5mm; }
+  .sum h2 { font-size: 10pt; margin-bottom: 2mm; }
+  .sum table { border-collapse: collapse; width: 100%; font-size: 9pt; }
+  .sum th, .sum td { border: 0.25mm solid #94a3b8; padding: 1.6mm 2.5mm; text-align: center; }
+  .sum th { background: #e2e8f0; font-size: 8pt; }
+  .sum td.lbl { text-align: left; }
+  .sum .chip { margin-right: 1.5mm; vertical-align: -0.4mm; }
+  .sum tr.tot td { font-weight: 700; background: #f1f5f9; }
+
+  .foot { margin-top: 4mm; display: flex; justify-content: space-between;
+          font-size: 7.5pt; color: #64748b; }
+
+  .print-bar { text-align: center; margin-bottom: 4mm; }
+  .print-bar button { font-size: 11pt; padding: 2mm 8mm; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="print-bar no-print"><button onclick="window.print()">🖨 Drukuj</button></div>
+  <div class="head">
+    <div>
+      <h1>${name}</h1>
+      <div class="sub">Kalendarz urlopowy — plan urlopów</div>
+    </div>
+    <div class="yr">Rok ${year}</div>
+  </div>
+  <div class="legend">${legend}
+    <span class="lg"><span class="chip" style="background:#eef1f5"></span>weekend</span>
+    <span class="lg"><span class="chip" style="background:#fde8e8"></span>święto</span>
+  </div>
+  <div class="grid">${monthsHtml}</div>
+  <div class="sum">
+    <h2>Wykorzystanie urlopów — ${year}</h2>
+    <table>
+      <thead>
+        <tr><th>Rodzaj urlopu</th><th>Pula (dni)</th><th>Rozplanowane / wykorzystane (dni)</th><th>Pozostało do wydania (dni)</th></tr>
+      </thead>
+      <tbody>${sumRows}</tbody>
+    </table>
+  </div>
+  <div class="foot">
+    <span>Wydruk: ${new Date().toLocaleDateString("pl-PL")}</span>
+    <span>Kalendarz urlopowy</span>
+  </div>
+  <script>window.onload = function () { setTimeout(function () { window.print(); }, 300); };</script>
+</body>
+</html>`;
+  }
+
   // ─── eksport / import ─────────────────────────────────────────────────
   function exportData() {
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
@@ -2132,6 +2333,8 @@
       if (e.key === "Escape") {
         const m = document.getElementById("empModal");
         if (m && !m.hidden) closeEmpModal();
+        const pm = document.getElementById("printModal");
+        if (pm && !pm.hidden) closePrintModal();
       }
     });
 
@@ -2155,6 +2358,14 @@
     });
 
     // Export / import
+    document.getElementById("printBtn").addEventListener("click", openPrintModal);
+    document.getElementById("printModalCloseBtn").addEventListener("click", closePrintModal);
+    document.getElementById("printCancelBtn").addEventListener("click", closePrintModal);
+    document.getElementById("printGoBtn").addEventListener("click", printEmployeeCalendar);
+    document.getElementById("printModal").addEventListener("click", (e) => {
+      if (e.target.id === "printModal") closePrintModal();
+    });
+
     document.getElementById("exportBtn").addEventListener("click", exportData);
     document.getElementById("importInput").addEventListener("change", (e) => {
       const f = e.target.files[0];
