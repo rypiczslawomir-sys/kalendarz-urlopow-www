@@ -314,6 +314,47 @@ input, select {
     color: var(--text-muted);
 }
 
+/* ─── pasek widoku (zakres kalendarza) ───────────────────────────────── */
+
+.view-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.4rem 1rem;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 0.85rem;
+    color: var(--text);
+}
+
+.view-bar select {
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    color: var(--text-strong);
+    font-size: 0.85rem;
+    cursor: pointer;
+    outline: none;
+}
+
+.view-bar select:focus {
+    border-color: var(--accent);
+}
+
+.view-weeks {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.view-hint {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+}
+
 /* ─── table ──────────────────────────────────────────────────────────── */
 
 .table-wrap {
@@ -397,6 +438,12 @@ table.kalendarz.kalendarz-scroll {
     text-overflow: ellipsis;
 }
 
+/* sztywna wysokość wierszy w obu tabelach — panel z pracownikami
+   i siatka dni muszą mieć zawsze identyczne wysokości */
+.kalendarz tbody tr {
+    height: var(--row-h);
+}
+
 .kalendarz thead {
     position: relative;
     z-index: 50;
@@ -472,6 +519,16 @@ table.kalendarz.kalendarz-scroll {
     letter-spacing: 0.02em;
     border-bottom: 1px solid var(--border-soft);
     padding: 0 2px;
+}
+
+.week-header.week-clickable {
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+
+.week-header.week-clickable:hover {
+    background: #fecaca !important;
+    color: #b91c1c;
 }
 
 .week-header.week-one {
@@ -1987,6 +2044,18 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
 .form-row select option {
     background: var(--bg-card);
     color: var(--text-strong);
+}
+
+.btn-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+    margin-right: auto;
+}
+
+.btn-danger:hover {
+    background: #fecaca;
+    border-color: #f87171;
 }
 
 .print-note {

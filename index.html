@@ -47,6 +47,21 @@
         <!-- Buttons wstawiane przez JS -->
     </section>
 
+    <section class="view-bar" id="viewBar">
+        <span class="picker-label">Widok kalendarza:</span>
+        <select id="viewModeSel" title="Zakres wyświetlanych dni">
+            <option value="year">Cały rok</option>
+            <option value="month">Miesiąc</option>
+            <option value="weeks">Tygodnie (zakres)</option>
+        </select>
+        <select id="viewMonthSel" hidden title="Wybierz miesiąc"></select>
+        <span class="view-weeks" id="viewWeeksWrap" hidden>
+            od <select id="viewWeekFrom" title="Pierwszy tydzień"></select>
+            do <select id="viewWeekTo" title="Ostatni tydzień"></select>
+        </span>
+        <span class="view-hint">💡 Kliknij numer tygodnia w nagłówku, aby wyczyścić absencje tego tygodnia</span>
+    </section>
+
     <main class="table-wrap" id="tableWrap">
         <div class="cal-split">
             <div class="cal-frozen" id="calFrozen">
@@ -163,6 +178,7 @@
                     <div class="checkbox-group" id="empFuncs"></div>
                 </div>
                 <div class="form-actions">
+                    <button type="button" class="btn btn-danger" id="empClearAbsBtn" hidden title="Usuń wszystkie absencje tego pracownika">🧹 Wyczyść absencje</button>
                     <button type="button" class="btn btn-ghost" id="empFormCancelBtn">Anuluj</button>
                     <button type="submit" class="btn btn-primary" id="empFormSubmitBtn">Zapisz</button>
                 </div>

@@ -171,6 +171,10 @@
   let lastProwLayupToast = 0;       // debounce ostrzeżenia prow-layup
   let _holMapCache = { year: null, map: null };
   let selectedDayKey = null;        // wybrany dzień dla panelu statystyk (nie persistowany)
+  let viewMode = "year";            // zakres widoku: "year" | "month" | "weeks"
+  let viewMonth = new Date().getMonth();
+  let viewWeekFromIdx = 0;          // indeksy w liście tygodni roku
+  let viewWeekToIdx = 0;
   let empModalCtx = null;           // { mode: "add"|"edit", id }
   let empModalTrainings = [];       // tymczasowa lista szkoleń w modalu
 
@@ -690,6 +694,96 @@
     }
   }
 
+  // ─── widok: zakres wyświetlanych dni ──────────────────────────────────
+  function getYearWeeksList(year) {
+    const list = [];
+    for (const d of H.buildYearDates(year)) {
+      const wk = H.fiscalWeekNumber(d);
+      if (!list.length || list[list.length - 1].wk !== wk) list.push({ wk, dates: [] });
+      list[list.length - 1].dates.push(d);
+    }
+    return list;
+  }
+
+  function getVisibleDates() {
+    const all = H.buildYearDates(state.year);
+    if (viewMode === "month") {
+      return all.filter((d) => d.getMonth() === viewMonth);
+    }
+    if (viewMode === "weeks") {
+      const list = getYearWeeksList(state.year);
+      const from = Math.max(0, Math.min(viewWeekFromIdx, viewWeekToIdx));
+      const to = Math.min(list.length - 1, Math.max(viewWeekFromIdx, viewWeekToIdx));
+      const keys = new Set();
+      for (let i = from; i <= to; i++) {
+        for (const d of list[i].dates) keys.add(H.dateKey(d));
+      }
+      return all.filter((d) => keys.has(H.dateKey(d)));
+    }
+    return all;
+  }
+
+  function fmtShortDate(d) {
+    return `${d.getDate()}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }
+
+  function populateViewSelectors() {
+    const mSel = document.getElementById("viewMonthSel");
+    mSel.innerHTML = "";
+    POLISH_MONTHS.forEach((m, i) => {
+      const o = document.createElement("option");
+      o.value = i;
+      o.textContent = m;
+      if (i === viewMonth) o.selected = true;
+      mSel.appendChild(o);
+    });
+
+    const list = getYearWeeksList(state.year);
+    if (viewWeekFromIdx >= list.length) viewWeekFromIdx = 0;
+    if (viewWeekToIdx >= list.length) viewWeekToIdx = list.length - 1;
+    for (const [selId, selectedIdx] of [["viewWeekFrom", viewWeekFromIdx], ["viewWeekTo", viewWeekToIdx]]) {
+      const sel = document.getElementById(selId);
+      sel.innerHTML = "";
+      list.forEach((g, i) => {
+        const o = document.createElement("option");
+        o.value = i;
+        o.textContent = `W${g.wk} (${fmtShortDate(g.dates[0])})`;
+        if (i === selectedIdx) o.selected = true;
+        sel.appendChild(o);
+      });
+    }
+  }
+
+  function syncViewBarVisibility() {
+    document.getElementById("viewMonthSel").hidden = viewMode !== "month";
+    document.getElementById("viewWeeksWrap").hidden = viewMode !== "weeks";
+  }
+
+  // ─── czyszczenie absencji tygodnia ────────────────────────────────────
+  function clearWeekAbsences(wkLabel, datesArr) {
+    const keys = datesArr.map((d) => H.dateKey(d));
+    const first = datesArr[0];
+    const last = datesArr[datesArr.length - 1];
+    if (!confirm(
+      `Usunąć WSZYSTKIE absencje wszystkich pracowników w tygodniu ${wkLabel} ` +
+      `(${fmtShortDate(first)}–${fmtShortDate(last)}.${state.year})?\n\nTej operacji nie można cofnąć.`
+    )) return;
+
+    let removed = 0;
+    for (const emp of state.employees) {
+      for (const k of keys) {
+        if (emp.days && emp.days[k]) { delete emp.days[k]; removed++; }
+      }
+    }
+    if (!removed) {
+      showToast("Brak absencji w tym tygodniu");
+      return;
+    }
+    saveState();
+    renderAll();
+    showToast(`Usunięto ${removed} wpisów absencji z tygodnia ${wkLabel}`);
+  }
+
   // ─── render: header ───────────────────────────────────────────────────
   function renderHead(dates, holMap, todayKey) {
     const theadFrozen = document.getElementById("kalendarzHeadFrozen");
@@ -759,29 +853,31 @@
 
     const trWeekS = document.createElement("tr");
     trWeekS.className = "row-weeks";
-    let currentWeek = -1;
-    let weekTh = null;
-    let daysInWeek = 0;
+    const weekGroups = [];
     dates.forEach((d) => {
       const wk = H.fiscalWeekNumber(d);
-      if (wk !== currentWeek) {
-        if (weekTh) weekTh.colSpan = daysInWeek;
-        currentWeek = wk;
-        daysInWeek = 0;
-        weekTh = document.createElement("th");
-        weekTh.className = "week-header";
-        const isWeekOne = wk === 1;
-        if (isWeekOne) weekTh.classList.add("week-one");
-        weekTh.textContent = H.fiscalWeekLabel(wk, isWeekOne);
-        const fyStart = H.fiscalYearStart(d);
-        weekTh.title = isWeekOne
-          ? "Week 1 — początek roku fiskalnego (1 lutego)"
-          : `Tydzień fiskalny ${wk} (rok od ${fyStart.getDate()} ${POLISH_MONTHS[fyStart.getMonth()].toLowerCase()} ${fyStart.getFullYear()})`;
-        trWeekS.appendChild(weekTh);
+      if (!weekGroups.length || weekGroups[weekGroups.length - 1].wk !== wk) {
+        weekGroups.push({ wk, dates: [] });
       }
-      daysInWeek++;
+      weekGroups[weekGroups.length - 1].dates.push(d);
     });
-    if (weekTh) weekTh.colSpan = daysInWeek;
+    for (const g of weekGroups) {
+      const weekTh = document.createElement("th");
+      weekTh.className = "week-header week-clickable";
+      const isWeekOne = g.wk === 1;
+      if (isWeekOne) weekTh.classList.add("week-one");
+      const label = H.fiscalWeekLabel(g.wk, isWeekOne);
+      weekTh.textContent = label;
+      weekTh.colSpan = g.dates.length;
+      const fyStart = H.fiscalYearStart(g.dates[0]);
+      const baseTitle = isWeekOne
+        ? "Week 1 — początek roku fiskalnego (1 lutego)"
+        : `Tydzień fiskalny ${g.wk} (rok od ${fyStart.getDate()} ${POLISH_MONTHS[fyStart.getMonth()].toLowerCase()} ${fyStart.getFullYear()})`;
+      weekTh.title = baseTitle + "\nKliknij, aby wyczyścić WSZYSTKIE absencje w tym tygodniu.";
+      const wkDates = g.dates.slice();
+      weekTh.addEventListener("click", () => clearWeekAbsences(label, wkDates));
+      trWeekS.appendChild(weekTh);
+    }
     theadScroll.appendChild(trWeekS);
 
     // ── wiersz 3: kolumny absencji + numery dni ──
@@ -1462,6 +1558,8 @@
     const fnInput    = document.getElementById("empFirstName");
     const ainInput   = document.getElementById("empAin");
     const submitBtn  = document.getElementById("empFormSubmitBtn");
+
+    document.getElementById("empClearAbsBtn").hidden = empModalCtx.mode !== "edit";
 
     if (empModalCtx.mode === "edit") {
       const emp = state.employees.find((e) => e.id === empModalCtx.id);
@@ -2267,7 +2365,7 @@
 
   // ─── główny render ────────────────────────────────────────────────────
   function renderAll() {
-    const dates = H.buildYearDates(state.year);
+    const dates = getVisibleDates();
     const holMap = H.holidayMap(state.year);
     const todayKey = H.dateKey(new Date());
 
@@ -2292,6 +2390,8 @@
     updateSummary();
     renderDayStats();
     renderTrainingStats();
+    // Ponowne wyrównanie po pełnym renderze (fonty/układ mogły się zmienić)
+    requestAnimationFrame(syncRowHeights);
   }
 
   // ─── init ─────────────────────────────────────────────────────────────
@@ -2311,7 +2411,39 @@
     sel.addEventListener("change", (e) => {
       state.year = parseInt(e.target.value, 10);
       saveState();
+      populateViewSelectors();
       renderAll();
+    });
+
+    // Widok: cały rok / miesiąc / zakres tygodni
+    populateViewSelectors();
+    syncViewBarVisibility();
+    document.getElementById("viewModeSel").addEventListener("change", (e) => {
+      viewMode = e.target.value;
+      syncViewBarVisibility();
+      renderAll();
+    });
+    document.getElementById("viewMonthSel").addEventListener("change", (e) => {
+      viewMonth = parseInt(e.target.value, 10);
+      renderAll();
+    });
+    document.getElementById("viewWeekFrom").addEventListener("change", (e) => {
+      viewWeekFromIdx = parseInt(e.target.value, 10);
+      renderAll();
+    });
+    document.getElementById("viewWeekTo").addEventListener("change", (e) => {
+      viewWeekToIdx = parseInt(e.target.value, 10);
+      renderAll();
+    });
+
+    // Wyrównywanie wierszy: po załadowaniu fontów i przy zmianie rozmiaru okna
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => syncRowHeights());
+    }
+    let rhTimer = null;
+    window.addEventListener("resize", () => {
+      clearTimeout(rhTimer);
+      rhTimer = setTimeout(syncRowHeights, 150);
     });
 
     // Add employee – modal
@@ -2322,6 +2454,21 @@
     document.getElementById("empAin").addEventListener("input", (e) => {
       const cleaned = normalizeAin(e.target.value);
       if (e.target.value !== cleaned) e.target.value = cleaned;
+    });
+    document.getElementById("empClearAbsBtn").addEventListener("click", () => {
+      if (!empModalCtx || empModalCtx.mode !== "edit") return;
+      const emp = state.employees.find((x) => x.id === empModalCtx.id);
+      if (!emp) return;
+      const n = Object.keys(emp.days || {}).length;
+      if (!n) { showToast("Ten pracownik nie ma żadnych absencji"); return; }
+      if (!confirm(
+        `Usunąć WSZYSTKIE absencje pracownika ${getDisplayName(emp)} (${n} wpisów, wszystkie lata)?\n\nTej operacji nie można cofnąć.`
+      )) return;
+      emp.days = {};
+      saveState();
+      closeEmpModal();
+      renderAll();
+      showToast("Usunięto wszystkie absencje pracownika");
     });
     document.getElementById("trainAddDept").addEventListener("change", syncTrainAreaSelect);
     document.getElementById("trainAddBtn").addEventListener("click", addModalTraining);
