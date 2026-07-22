@@ -123,19 +123,24 @@
   const POLISH_DOW = ["nd", "pn", "wt", "śr", "cz", "pt", "so"];
 
   // Kody absencji.
-  //   hourly: true  → kod rozliczany godzinowo (pula w godzinach)
-  //   hourly: false → kod rozliczany dziennie  (pula w dniach roboczych)
+  //   hourly:  true  → kod rozliczany godzinowo (pula w godzinach)
+  //   hourly:  false → kod rozliczany dziennie  (pula w dniach roboczych)
+  //   absence: true  → wlicza się do wskaźnika % absencji (nieobecności
+  //            nieplanowane/usprawiedliwione wg praktyki HR i prawa pracy);
+  //            urlopy planowane (wypoczynkowy, dodatkowy) się NIE wliczają.
   const CODES = [
-    { code: "U",   label: "Wypoczynkowy",     article: "art. 154 KP",   defaultPool: 26,   hourly: false },
-    { code: "D",   label: "Dodatkowy",        article: "regulamin",     defaultPool:  6,   hourly: false },
-    { code: "UŻ",  label: "Na żądanie",       article: "art. 167² KP",  defaultPool:  4,   hourly: false },
-    { code: "SW",  label: "Siła wyższa",      article: "art. 148¹ KP",  defaultPool: 16,   hourly: true  },
-    { code: "OPR", label: "Opieka rodzina",   article: "art. 173¹ KP",  defaultPool:  5,   hourly: false },
-    { code: "OP",  label: "Opieka dziecko",   article: "art. 188 KP",   defaultPool: 16,   hourly: true  },
-    { code: "KREW", label: "Krwiodastwo",     article: "art. 128¹ KP",  defaultPool: null, hourly: false },
-    { code: "NUN", label: "Obecność niepłatna", article: "art. 174 KP", defaultPool: null, hourly: false },
-    { code: "L",   label: "L4 (chorobowe)",   article: "art. 92 KP",    defaultPool: null, hourly: false },
+    { code: "U",   label: "Wypoczynkowy",     article: "art. 154 KP",   defaultPool: 26,   hourly: false, absence: false },
+    { code: "D",   label: "Dodatkowy",        article: "regulamin",     defaultPool:  6,   hourly: false, absence: false },
+    { code: "UŻ",  label: "Na żądanie",       article: "art. 167² KP",  defaultPool:  4,   hourly: false, absence: true  },
+    { code: "SW",  label: "Siła wyższa",      article: "art. 148¹ KP",  defaultPool: 16,   hourly: true,  absence: true  },
+    { code: "OPR", label: "Opieka rodzina",   article: "art. 173¹ KP",  defaultPool:  5,   hourly: false, absence: true  },
+    { code: "OP",  label: "Opieka dziecko",   article: "art. 188 KP",   defaultPool: 16,   hourly: true,  absence: true  },
+    { code: "KREW", label: "Krwiodastwo",     article: "art. 128¹ KP",  defaultPool: null, hourly: false, absence: true  },
+    { code: "NUN", label: "Obecność niepłatna", article: "art. 174 KP", defaultPool: null, hourly: false, absence: true  },
+    { code: "L",   label: "L4 (chorobowe)",   article: "art. 92 KP",    defaultPool: null, hourly: false, absence: true  },
   ];
+
+  const ABSENCE_CODES = new Set(CODES.filter((c) => c.absence).map((c) => c.code));
 
   const PROW_LAYUP_ID = "prow-layup";
 
@@ -804,8 +809,8 @@
     });
     fixedDayCells.push({
       cls: "col-abs",
-      html: `<div class="hdr-abs"><span class="hdr-code">%ABS</span><span class="hdr-unit">dział: <b id="absTeamPct">—</b></span></div>`,
-      title: "Procent absencji pracownika (dni absencji / dni robocze roku). Poniżej: średnia całego działu.",
+      html: `<div class="hdr-abs"><span class="hdr-sub">%ABS dział</span><b class="abs-team-badge" id="absTeamPct">—</b></div>`,
+      title: "Procent absencji (bez urlopów U i D). Duża wartość: średnia całego działu.",
     });
     fixedDayCells.push({ cls: "col-actions", html: `<span class="actions-hdr" title="Edytuj / usuń">✎ ×</span>` });
 
@@ -1830,11 +1835,14 @@
     return n;
   }
 
+  // Liczymy tylko dni z kodem oznaczonym absence:true (bez urlopów planowanych)
   function countEmpAbsentDays(emp, year) {
     const prefix = year + "-";
     let n = 0;
     for (const key of Object.keys(emp.days || {})) {
-      if (key.startsWith(prefix) && emp.days[key] && isWorkingDayKey(key)) n++;
+      if (!key.startsWith(prefix)) continue;
+      const code = getCode(emp.days[key]);
+      if (code && ABSENCE_CODES.has(code) && isWorkingDayKey(key)) n++;
     }
     return n;
   }
@@ -1842,6 +1850,18 @@
   function formatPct(v) {
     return (Math.round(v * 10) / 10).toLocaleString("pl-PL") + "%";
   }
+
+  // Płynny kolor wskaźnika: 0% zielony → 5% żółty → 10%+ czerwony
+  function absencePctColor(pct) {
+    const t = Math.max(0, Math.min(1, pct / 10));
+    const hue = Math.round(120 - 120 * t);
+    return {
+      bg: `hsl(${hue}, 85%, 86%)`,
+      fg: `hsl(${hue}, 95%, 22%)`,
+    };
+  }
+
+  const ABSENCE_CODES_LABEL = CODES.filter((c) => c.absence).map((c) => c.code).join(", ");
 
   function updateAbsenceStats() {
     const year = state.year;
@@ -1856,11 +1876,11 @@
       );
       if (!td) continue;
       const pct = workDays > 0 ? (absent / workDays) * 100 : 0;
+      const col = absencePctColor(pct);
       td.textContent = formatPct(pct);
-      td.title = `${getDisplayName(emp)}: ${absent} dni absencji z ${workDays} dni roboczych w ${year}`;
-      td.classList.toggle("abs-high", pct >= 15);
-      td.classList.toggle("abs-mid", pct >= 7 && pct < 15);
-      td.classList.toggle("abs-zero", absent === 0);
+      td.title = `${getDisplayName(emp)}: ${absent} dni absencji (${ABSENCE_CODES_LABEL}) z ${workDays} dni roboczych w ${year}. Urlopy U i D nie są wliczane.`;
+      td.style.backgroundColor = col.bg;
+      td.style.color = col.fg;
     }
 
     const teamEl = document.getElementById("absTeamPct");
@@ -1868,8 +1888,11 @@
       const teamPct = workDays > 0 && state.employees.length > 0
         ? (totalAbsent / (workDays * state.employees.length)) * 100
         : 0;
+      const col = absencePctColor(teamPct);
       teamEl.textContent = formatPct(teamPct);
-      teamEl.title = `Średnia absencja działu: ${totalAbsent} dni absencji / (${workDays} dni roboczych × ${state.employees.length} pracowników)`;
+      teamEl.style.backgroundColor = col.bg;
+      teamEl.style.color = col.fg;
+      teamEl.title = `Średnia absencja działu: ${totalAbsent} dni absencji / (${workDays} dni roboczych × ${state.employees.length} pracowników). Wliczane kody: ${ABSENCE_CODES_LABEL} — bez urlopów planowanych (U, D).`;
     }
   }
 

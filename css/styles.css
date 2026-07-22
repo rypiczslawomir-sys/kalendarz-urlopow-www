@@ -1174,13 +1174,22 @@ tr:nth-child(even) .cell-wyk.overdrawn {
 
 /* ─── kolumna % absencji ─────────────────────────────────────────────── */
 
-.hdr-abs .hdr-code {
+.hdr-abs .hdr-sub {
     color: var(--accent-strong);
 }
 
-.hdr-abs .hdr-unit b {
-    color: var(--text-strong);
+/* wyraźny wskaźnik działu — kolorowa plakietka (kolor ustawiany w JS) */
+.abs-team-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 46px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 0.78rem;
     font-weight: 800;
+    line-height: 1.3;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.18);
 }
 
 .cell-abs {
@@ -1188,21 +1197,6 @@ tr:nth-child(even) .cell-wyk.overdrawn {
     font-weight: 700;
     color: var(--text-strong);
     border-left: 2px solid var(--border);
-}
-
-.cell-abs.abs-zero {
-    color: var(--text-dim);
-    font-weight: 500;
-}
-
-.cell-abs.abs-mid {
-    background-color: #fef3c7 !important;
-    color: #92400e;
-}
-
-.cell-abs.abs-high {
-    background-color: #fee2e2 !important;
-    color: #b91c1c;
 }
 
 .cell-actions {
