@@ -11,7 +11,7 @@
 
   /** Szerokości kolumn lewego panelu — zgodne z css/styles.css (.col-*) */
   const STICKY_COL_WIDTHS = {
-    "col-lp": 44, "col-name": 240, "col-pool": 60, "col-wyk": 84, "col-l4": 60, "col-m": 60, "col-abs": 64, "col-actions": 68,
+    "col-lp": 44, "col-name": 240, "col-pool": 60, "col-wyk": 84, "col-l4": 60, "col-m": 60, "col-zm": 60, "col-abs": 64, "col-actions": 68,
   };
   function frozenPanelWidthPx() {
     const poolCount = CODES.filter((c) => c.defaultPool !== null).length;
@@ -22,6 +22,7 @@
       poolCount * STICKY_COL_WIDTHS["col-wyk"] +
       STICKY_COL_WIDTHS["col-l4"] +
       STICKY_COL_WIDTHS["col-m"] +
+      STICKY_COL_WIDTHS["col-zm"] +
       STICKY_COL_WIDTHS["col-abs"] +
       STICKY_COL_WIDTHS["col-actions"]
     );
@@ -138,7 +139,8 @@
     { code: "OP",  label: "Opieka dziecko",   article: "art. 188 KP",   defaultPool: 16,   hourly: true,  absence: true  },
     { code: "KREW", label: "Krwiodastwo",     article: "art. 128¹ KP",  defaultPool: null, hourly: false, absence: true  },
     { code: "NUN", label: "Obecność niepłatna", article: "art. 174 KP", defaultPool: null, hourly: false, absence: true  },
-    { code: "M",   label: "Macierzyński",     article: "art. 180 KP",   defaultPool: null, hourly: false, absence: false },
+    { code: "M",   label: "Urlop macierzyński", article: "art. 180 KP", defaultPool: null, hourly: false, absence: false },
+    { code: "ZM",  label: "Zwolnienie macierzyńskie", article: "L4 w ciąży, art. 92 KP", defaultPool: null, hourly: false, absence: true },
     { code: "L",   label: "L4 (chorobowe)",   article: "art. 92 KP",    defaultPool: null, hourly: false, absence: true  },
   ];
 
@@ -705,6 +707,7 @@
     }
     fixedSpec.push({ cls: "col-l4", label: "" });
     fixedSpec.push({ cls: "col-m", label: "" });
+    fixedSpec.push({ cls: "col-zm", label: "" });
     fixedSpec.push({ cls: "col-abs", label: "" });
     fixedSpec.push({ cls: "col-actions", label: "" });
     syncFrozenColgroup(fixedSpec);
@@ -817,6 +820,12 @@
       title: "Urlop macierzyński (art. 180 KP) — nie wlicza się do % absencji",
     });
     fixedDayCells.push({
+      cls: "col-zm",
+      code: "ZM",
+      html: `<div class="hdr-zm"><span class="hdr-code hdr-code-ZM">ZM</span><span class="hdr-unit">dni</span></div>`,
+      title: "Zwolnienie macierzyńskie (L4 w ciąży) — wlicza się do % absencji",
+    });
+    fixedDayCells.push({
       cls: "col-abs",
       html: `<div class="hdr-abs"><span class="hdr-sub">%ABS dział</span><b class="abs-team-badge" id="absTeamPct">—</b></div>`,
       title: "Procent absencji (bez urlopów U i D). Duża wartość: średnia całego działu.",
@@ -870,7 +879,7 @@
     tbodyFrozen.innerHTML = "";
     tbodyScroll.innerHTML = "";
 
-    const frozenColCount = 2 + CODES.filter((c) => c.defaultPool !== null).length * 2 + 4;
+    const frozenColCount = 2 + CODES.filter((c) => c.defaultPool !== null).length * 2 + 5;
 
     if (state.employees.length === 0) {
       const trF = document.createElement("tr");
@@ -972,6 +981,11 @@
       tdM.dataset.code = "M";
       trF.appendChild(tdM);
 
+      const tdZM = document.createElement("td");
+      tdZM.className = "cell-zm col-zm";
+      tdZM.dataset.code = "ZM";
+      trF.appendChild(tdZM);
+
       const tdAbs = document.createElement("td");
       tdAbs.className = "cell-abs col-abs";
       trF.appendChild(tdAbs);
@@ -1050,9 +1064,10 @@
 
     for (const c of CODES) {
       let td;
-      if (c.code === "L")      td = tr.querySelector('td.cell-l4[data-code="L"]');
-      else if (c.code === "M") td = tr.querySelector('td.cell-m[data-code="M"]');
-      else                     td = tr.querySelector(`td.cell-wyk[data-code="${c.code}"]`);
+      if (c.code === "L")       td = tr.querySelector('td.cell-l4[data-code="L"]');
+      else if (c.code === "M")  td = tr.querySelector('td.cell-m[data-code="M"]');
+      else if (c.code === "ZM") td = tr.querySelector('td.cell-zm[data-code="ZM"]');
+      else                      td = tr.querySelector(`td.cell-wyk[data-code="${c.code}"]`);
       if (!td) continue;
 
       const usage = getUsage(emp, c.code, state.year);
