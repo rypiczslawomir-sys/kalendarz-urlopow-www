@@ -11,7 +11,7 @@
 
   /** Szerokości kolumn lewego panelu — zgodne z css/styles.css (.col-*) */
   const STICKY_COL_WIDTHS = {
-    "col-lp": 44, "col-name": 240, "col-pool": 60, "col-wyk": 84, "col-l4": 60, "col-actions": 68,
+    "col-lp": 44, "col-name": 240, "col-pool": 60, "col-wyk": 84, "col-l4": 60, "col-abs": 64, "col-actions": 68,
   };
   function frozenPanelWidthPx() {
     const poolCount = CODES.filter((c) => c.defaultPool !== null).length;
@@ -21,6 +21,7 @@
       poolCount * STICKY_COL_WIDTHS["col-pool"] +
       poolCount * STICKY_COL_WIDTHS["col-wyk"] +
       STICKY_COL_WIDTHS["col-l4"] +
+      STICKY_COL_WIDTHS["col-abs"] +
       STICKY_COL_WIDTHS["col-actions"]
     );
   }
@@ -696,6 +697,7 @@
       fixedSpec.push({ cls: "col-wyk",  label: "" });
     }
     fixedSpec.push({ cls: "col-l4", label: "" });
+    fixedSpec.push({ cls: "col-abs", label: "" });
     fixedSpec.push({ cls: "col-actions", label: "" });
     syncFrozenColgroup(fixedSpec);
 
@@ -800,6 +802,11 @@
       html: `<div class="hdr-l4"><span class="hdr-code hdr-code-L">L4</span><span class="hdr-unit">dni</span></div>`,
       title: "Zwolnienie lekarskie",
     });
+    fixedDayCells.push({
+      cls: "col-abs",
+      html: `<div class="hdr-abs"><span class="hdr-code">%ABS</span><span class="hdr-unit">dział: <b id="absTeamPct">—</b></span></div>`,
+      title: "Procent absencji pracownika (dni absencji / dni robocze roku). Poniżej: średnia całego działu.",
+    });
     fixedDayCells.push({ cls: "col-actions", html: `<span class="actions-hdr" title="Edytuj / usuń">✎ ×</span>` });
 
     fixedDayCells.forEach((spec) => {
@@ -849,7 +856,7 @@
     tbodyFrozen.innerHTML = "";
     tbodyScroll.innerHTML = "";
 
-    const frozenColCount = 2 + CODES.filter((c) => c.defaultPool !== null).length * 2 + 2;
+    const frozenColCount = 2 + CODES.filter((c) => c.defaultPool !== null).length * 2 + 3;
 
     if (state.employees.length === 0) {
       const trF = document.createElement("tr");
@@ -945,6 +952,10 @@
       tdL4.className = "cell-l4 col-l4";
       tdL4.dataset.code = "L";
       trF.appendChild(tdL4);
+
+      const tdAbs = document.createElement("td");
+      tdAbs.className = "cell-abs col-abs";
+      trF.appendChild(tdAbs);
 
       const tdActions = document.createElement("td");
       tdActions.className = "cell-actions col-actions";
@@ -1802,6 +1813,64 @@
     document.getElementById("statTotalVacation").textContent = formatUsage(totalVacDays);
     document.getElementById("statL4").textContent = formatUsage(totalL4Days);
     document.getElementById("statHolidays").textContent = H.getPolishHolidays(year).length;
+
+    updateAbsenceStats();
+  }
+
+  // ─── procent absencji ─────────────────────────────────────────────────
+  let _workDaysCache = { year: null, count: 0 };
+
+  function countWorkingDaysInYear(year) {
+    if (_workDaysCache.year === year) return _workDaysCache.count;
+    let n = 0;
+    for (const d of H.buildYearDates(year)) {
+      if (isWorkingDayKey(H.dateKey(d))) n++;
+    }
+    _workDaysCache = { year, count: n };
+    return n;
+  }
+
+  function countEmpAbsentDays(emp, year) {
+    const prefix = year + "-";
+    let n = 0;
+    for (const key of Object.keys(emp.days || {})) {
+      if (key.startsWith(prefix) && emp.days[key] && isWorkingDayKey(key)) n++;
+    }
+    return n;
+  }
+
+  function formatPct(v) {
+    return (Math.round(v * 10) / 10).toLocaleString("pl-PL") + "%";
+  }
+
+  function updateAbsenceStats() {
+    const year = state.year;
+    const workDays = countWorkingDaysInYear(year);
+    let totalAbsent = 0;
+
+    for (const emp of state.employees) {
+      const absent = countEmpAbsentDays(emp, year);
+      totalAbsent += absent;
+      const td = document.querySelector(
+        `#kalendarzBodyFrozen tr[data-emp-id="${emp.id}"] td.cell-abs`
+      );
+      if (!td) continue;
+      const pct = workDays > 0 ? (absent / workDays) * 100 : 0;
+      td.textContent = formatPct(pct);
+      td.title = `${getDisplayName(emp)}: ${absent} dni absencji z ${workDays} dni roboczych w ${year}`;
+      td.classList.toggle("abs-high", pct >= 15);
+      td.classList.toggle("abs-mid", pct >= 7 && pct < 15);
+      td.classList.toggle("abs-zero", absent === 0);
+    }
+
+    const teamEl = document.getElementById("absTeamPct");
+    if (teamEl) {
+      const teamPct = workDays > 0 && state.employees.length > 0
+        ? (totalAbsent / (workDays * state.employees.length)) * 100
+        : 0;
+      teamEl.textContent = formatPct(teamPct);
+      teamEl.title = `Średnia absencja działu: ${totalAbsent} dni absencji / (${workDays} dni roboczych × ${state.employees.length} pracowników)`;
+    }
   }
 
   function computeTrainingStats() {
@@ -1853,17 +1922,12 @@
       th.style.color = area.color;
       headRow.appendChild(th);
     }
-    const thSum = document.createElement("th");
-    thSum.className = "col-sum";
-    thSum.textContent = "Σ";
-    thSum.title = "Suma ukończonych szkoleń w dziale";
-    headRow.appendChild(thSum);
     thead.appendChild(headRow);
     table.appendChild(thead);
 
+    // Bez kolumny Σ i wiersza "Razem" — każda komórka to liczba osób
+    // przeszkolonych w danym dziale na dany obszar, bez ogólnych sum.
     const tbody = document.createElement("tbody");
-    const colTotals = {};
-    for (const area of areas) colTotals[area.id] = 0;
 
     for (const dept of DEPARTMENTS) {
       const row = document.createElement("tr");
@@ -1876,7 +1940,6 @@
       tdDept.appendChild(document.createTextNode(dept.label));
       row.appendChild(tdDept);
 
-      let rowSum = 0;
       for (const area of areas) {
         const td = document.createElement("td");
         const allowed = dept.trainings.includes(area.id);
@@ -1886,39 +1949,14 @@
         } else {
           const n = stats[dept.id][area.id] || 0;
           td.textContent = String(n);
+          td.title = `${dept.label} / ${getTrainingArea(area.id)?.label || area.id}: ${n} os.`;
           if (n > 0) td.classList.add("count-positive");
-          rowSum += n;
-          colTotals[area.id] += n;
         }
         row.appendChild(td);
       }
 
-      const tdSum = document.createElement("td");
-      tdSum.className = "col-sum" + (rowSum > 0 ? " count-positive" : "");
-      tdSum.textContent = String(rowSum);
-      row.appendChild(tdSum);
       tbody.appendChild(row);
     }
-
-    const footRow = document.createElement("tr");
-    footRow.className = "row-total";
-    const tdLabel = document.createElement("td");
-    tdLabel.textContent = "Razem";
-    footRow.appendChild(tdLabel);
-    let grandTotal = 0;
-    for (const area of areas) {
-      const td = document.createElement("td");
-      const n = colTotals[area.id];
-      td.textContent = String(n);
-      if (n > 0) td.classList.add("count-positive");
-      grandTotal += n;
-      footRow.appendChild(td);
-    }
-    const tdGrand = document.createElement("td");
-    tdGrand.className = "col-sum count-positive";
-    tdGrand.textContent = String(grandTotal);
-    footRow.appendChild(tdGrand);
-    tbody.appendChild(footRow);
 
     table.appendChild(tbody);
     body.innerHTML = "";

@@ -511,6 +511,7 @@ table.kalendarz.kalendarz-scroll {
 .col-pool { width: 60px; }
 .col-wyk { width: 84px; }
 .col-l4 { width: 60px; }
+.col-abs { width: 64px; }
 .col-actions { width: 68px; }
 
 /* lewy panel — komórki bez sticky (cały .cal-frozen jest sticky) */
@@ -519,6 +520,7 @@ table.kalendarz.kalendarz-scroll {
 .kalendarz-frozen .col-pool,
 .kalendarz-frozen .col-wyk,
 .kalendarz-frozen .col-l4,
+.kalendarz-frozen .col-abs,
 .kalendarz-frozen .col-actions {
     position: static;
     left: auto;
@@ -529,6 +531,7 @@ table.kalendarz.kalendarz-scroll {
 .kalendarz-frozen .col-pool    { width: 60px;  min-width: 60px;  max-width: 60px; }
 .kalendarz-frozen .col-wyk     { width: 84px;  min-width: 84px;  max-width: 84px; }
 .kalendarz-frozen .col-l4      { width: 60px;  min-width: 60px;  max-width: 60px; }
+.kalendarz-frozen .col-abs     { width: 64px;  min-width: 64px;  max-width: 64px; }
 .kalendarz-frozen .col-actions { width: 68px;  min-width: 68px;  max-width: 68px; }
 
 .kalendarz-frozen .cell-name {
@@ -598,6 +601,7 @@ table.kalendarz.kalendarz-scroll {
 .kalendarz-frozen tbody tr:nth-child(even) .col-pool,
 .kalendarz-frozen tbody tr:nth-child(even) .col-wyk,
 .kalendarz-frozen tbody tr:nth-child(even) .col-l4,
+.kalendarz-frozen tbody tr:nth-child(even) .col-abs,
 .kalendarz-frozen tbody tr:nth-child(even) .col-actions {
     background-color: var(--bg-row-alt);
 }
@@ -607,6 +611,7 @@ table.kalendarz.kalendarz-scroll {
 .kalendarz-frozen tbody tr.row-sync-hover .col-pool,
 .kalendarz-frozen tbody tr.row-sync-hover .col-wyk,
 .kalendarz-frozen tbody tr.row-sync-hover .col-l4,
+.kalendarz-frozen tbody tr.row-sync-hover .col-abs,
 .kalendarz-frozen tbody tr.row-sync-hover .col-actions {
     background-color: var(--bg-row-hover);
 }
@@ -706,7 +711,8 @@ tr:hover .cell-l4[data-code] {
 /* kompaktowe nagłówki pul / wyk. w wierszu dni */
 .hdr-pool,
 .hdr-wyk,
-.hdr-l4 {
+.hdr-l4,
+.hdr-abs {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1164,6 +1170,39 @@ tr:nth-child(even) .cell-wyk.overdrawn {
     color: var(--code-L);
     font-size: 1.05rem;
     font-weight: 700;
+}
+
+/* ─── kolumna % absencji ─────────────────────────────────────────────── */
+
+.hdr-abs .hdr-code {
+    color: var(--accent-strong);
+}
+
+.hdr-abs .hdr-unit b {
+    color: var(--text-strong);
+    font-weight: 800;
+}
+
+.cell-abs {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-strong);
+    border-left: 2px solid var(--border);
+}
+
+.cell-abs.abs-zero {
+    color: var(--text-dim);
+    font-weight: 500;
+}
+
+.cell-abs.abs-mid {
+    background-color: #fef3c7 !important;
+    color: #92400e;
+}
+
+.cell-abs.abs-high {
+    background-color: #fee2e2 !important;
+    color: #b91c1c;
 }
 
 .cell-actions {
