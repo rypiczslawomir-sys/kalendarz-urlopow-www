@@ -47,6 +47,7 @@
     --code-OP:  #facc15;   /* opieka dziecko */
     --code-KREW: #e11d48;  /* krwiodastwo */
     --code-NUN:  #64748b;  /* obecność niepłatna */
+    --code-M:   #f472b6;   /* urlop macierzyński */
     --code-L:   #ef4444;   /* L4 */
 
     --day-col-w:     32px;
@@ -511,6 +512,7 @@ table.kalendarz.kalendarz-scroll {
 .col-pool { width: 60px; }
 .col-wyk { width: 84px; }
 .col-l4 { width: 60px; }
+.col-m { width: 60px; }
 .col-abs { width: 64px; }
 .col-actions { width: 68px; }
 
@@ -520,6 +522,7 @@ table.kalendarz.kalendarz-scroll {
 .kalendarz-frozen .col-pool,
 .kalendarz-frozen .col-wyk,
 .kalendarz-frozen .col-l4,
+.kalendarz-frozen .col-m,
 .kalendarz-frozen .col-abs,
 .kalendarz-frozen .col-actions {
     position: static;
@@ -531,6 +534,7 @@ table.kalendarz.kalendarz-scroll {
 .kalendarz-frozen .col-pool    { width: 60px;  min-width: 60px;  max-width: 60px; }
 .kalendarz-frozen .col-wyk     { width: 84px;  min-width: 84px;  max-width: 84px; }
 .kalendarz-frozen .col-l4      { width: 60px;  min-width: 60px;  max-width: 60px; }
+.kalendarz-frozen .col-m       { width: 60px;  min-width: 60px;  max-width: 60px; }
 .kalendarz-frozen .col-abs     { width: 64px;  min-width: 64px;  max-width: 64px; }
 .kalendarz-frozen .col-actions { width: 68px;  min-width: 68px;  max-width: 68px; }
 
@@ -601,6 +605,7 @@ table.kalendarz.kalendarz-scroll {
 .kalendarz-frozen tbody tr:nth-child(even) .col-pool,
 .kalendarz-frozen tbody tr:nth-child(even) .col-wyk,
 .kalendarz-frozen tbody tr:nth-child(even) .col-l4,
+.kalendarz-frozen tbody tr:nth-child(even) .col-m,
 .kalendarz-frozen tbody tr:nth-child(even) .col-abs,
 .kalendarz-frozen tbody tr:nth-child(even) .col-actions {
     background-color: var(--bg-row-alt);
@@ -611,6 +616,7 @@ table.kalendarz.kalendarz-scroll {
 .kalendarz-frozen tbody tr.row-sync-hover .col-pool,
 .kalendarz-frozen tbody tr.row-sync-hover .col-wyk,
 .kalendarz-frozen tbody tr.row-sync-hover .col-l4,
+.kalendarz-frozen tbody tr.row-sync-hover .col-m,
 .kalendarz-frozen tbody tr.row-sync-hover .col-abs,
 .kalendarz-frozen tbody tr.row-sync-hover .col-actions {
     background-color: var(--bg-row-hover);
@@ -635,7 +641,7 @@ table.kalendarz.kalendarz-scroll {
 }
 
 /* Tła kolumn pula+wyk barwione tintem koloru danego kodu */
-.cell-pool[data-code], .cell-wyk[data-code], .cell-l4[data-code] {
+.cell-pool[data-code], .cell-wyk[data-code], .cell-l4[data-code], .cell-m[data-code] {
     --tint: transparent;
 }
 .cell-pool[data-code="U"],   .cell-wyk[data-code="U"]   { --tint: var(--code-U);   }
@@ -645,11 +651,13 @@ table.kalendarz.kalendarz-scroll {
 .cell-pool[data-code="OPR"], .cell-wyk[data-code="OPR"] { --tint: var(--code-OPR); }
 .cell-pool[data-code="OP"],  .cell-wyk[data-code="OP"]  { --tint: var(--code-OP);  }
 .cell-l4[data-code="L"]                                  { --tint: var(--code-L);   }
+.cell-m[data-code="M"]                                   { --tint: var(--code-M);   }
 
 /* nagłówki – stały tint (header bg), w pełni nieprzezroczyste */
 .kalendarz thead tr.row-days th.fixed-cell.col-pool[data-code],
 .kalendarz thead tr.row-days th.fixed-cell.col-wyk[data-code],
-.kalendarz thead tr.row-days th.fixed-cell.col-l4[data-code] {
+.kalendarz thead tr.row-days th.fixed-cell.col-l4[data-code],
+.kalendarz thead tr.row-days th.fixed-cell.col-m[data-code] {
     background-color: color-mix(in srgb, var(--tint) 16%, var(--bg-header)) !important;
     border-top: 2px solid var(--tint);
 }
@@ -712,6 +720,7 @@ tr:hover .cell-l4[data-code] {
 .hdr-pool,
 .hdr-wyk,
 .hdr-l4,
+.hdr-m,
 .hdr-abs {
     display: flex;
     flex-direction: column;
@@ -738,6 +747,7 @@ tr:hover .cell-l4[data-code] {
 .hdr-code-OPR { color: var(--code-OPR); }
 .hdr-code-OP  { color: var(--code-OP); }
 .hdr-code-L   { color: var(--code-L); }
+.hdr-code-M   { color: var(--code-M); }
 
 .hdr-sub {
     color: var(--text-muted);
@@ -1172,6 +1182,30 @@ tr:nth-child(even) .cell-wyk.overdrawn {
     font-weight: 700;
 }
 
+/* ─── kolumna M (urlop macierzyński) ─────────────────────────────────── */
+
+.cell-m {
+    color: #be185d;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.cell-m[data-code] {
+    background-color: color-mix(in srgb, var(--tint) 16%, var(--bg-row));
+}
+tr:nth-child(even) .cell-m[data-code] {
+    background-color: color-mix(in srgb, var(--tint) 16%, var(--bg-row-alt));
+}
+tr:hover .cell-m[data-code] {
+    background-color: color-mix(in srgb, var(--tint) 22%, var(--bg-row-hover));
+}
+
+.cell-m.usage-active {
+    background-color: #fce7f3 !important;
+    color: #9d174d !important;
+    box-shadow: inset 0 0 0 1px #f472b6 !important;
+}
+
 /* ─── kolumna % absencji ─────────────────────────────────────────────── */
 
 .hdr-abs .hdr-sub {
@@ -1280,6 +1314,7 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
 .day-cell[data-code="OP"]  { background: var(--code-OP);  color: #2a2200; }
 .day-cell[data-code="KREW"] { background: var(--code-KREW); color: #fff; }
 .day-cell[data-code="NUN"]  { background: var(--code-NUN);  color: #f1f5f9; }
+.day-cell[data-code="M"]   { background: var(--code-M);   color: #3f0720; }
 .day-cell[data-code="L"]   { background: var(--code-L);   color: #2a0707; }
 
 /* dłuższe kody potrzebują mniejszego fontu by się zmieściły */
