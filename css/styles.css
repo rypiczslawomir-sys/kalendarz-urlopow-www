@@ -532,7 +532,7 @@ table.kalendarz.kalendarz-scroll {
 .kalendarz-frozen .col-actions { width: 68px;  min-width: 68px;  max-width: 68px; }
 
 .kalendarz-frozen .cell-name {
-    overflow: visible;
+    overflow: hidden;
     white-space: normal;
 }
 
@@ -832,10 +832,14 @@ tr:hover .cell-l4[data-code] {
     box-shadow: inset 0 0 0 1px var(--accent);
 }
 
+/* Stała wysokość — wiersz lewego panelu nie może urosnąć,
+   inaczej rozjeżdża się z wierszami dni w tabeli przewijanej */
 .name-wrap {
     display: flex;
     align-items: center;
-    min-height: var(--row-h);
+    height: var(--row-h);
+    max-height: var(--row-h);
+    overflow: hidden;
     line-height: 1.2;
 }
 
@@ -847,7 +851,8 @@ tr:hover .cell-l4[data-code] {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    line-height: 1.22;
+    /* 2 linie × 1.1 × 1.18rem ≈ 39px — mieści się w wierszu 42px */
+    line-height: 1.1;
     word-break: break-word;
 }
 

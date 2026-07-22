@@ -989,6 +989,29 @@
       tbodyScroll.appendChild(trS);
       updateUsageCells(emp);
     });
+
+    syncRowHeights();
+  }
+
+  // Wyrównanie wysokości wierszy między lewym panelem a tabelą dni —
+  // bez tego wiersze rozjeżdżają się, gdy treść (np. długie nazwisko)
+  // podniesie wysokość tylko w jednej z dwóch tabel.
+  function syncRowHeights() {
+    const rowsF = document.querySelectorAll("#kalendarzBodyFrozen tr");
+    const rowsS = document.querySelectorAll("#kalendarzBody tr");
+    const n = Math.min(rowsF.length, rowsS.length);
+    for (let i = 0; i < n; i++) {
+      rowsF[i].style.height = "";
+      rowsS[i].style.height = "";
+    }
+    for (let i = 0; i < n; i++) {
+      const h = Math.max(
+        rowsF[i].getBoundingClientRect().height,
+        rowsS[i].getBoundingClientRect().height
+      );
+      rowsF[i].style.height = h + "px";
+      rowsS[i].style.height = h + "px";
+    }
   }
 
   function updateUsageCells(emp) {
