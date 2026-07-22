@@ -242,7 +242,7 @@
 
   function saveState() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(flushSave, 400);
+    saveTimer = setTimeout(flushSave, 1500);
   }
 
   async function flushSave() {

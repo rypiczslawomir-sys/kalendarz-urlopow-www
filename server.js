@@ -50,6 +50,42 @@ function requireAuth(req, res, next) {
   return res.redirect("/login.html");
 }
 
+// ── stan w pamięci + rzadszy zapis do gist ────────────────────────────
+// GitHub limituje częste zapisy (secondary rate limit) — trzymamy stan
+// w pamięci i wysyłamy do gista najwyżej co FLUSH_INTERVAL_MS.
+const FLUSH_INTERVAL_MS = 30 * 1000;
+let cachedState = null;
+let dirty = false;
+let flushing = false;
+
+async function loadStateCached() {
+  if (cachedState) return cachedState;
+  cachedState = await readState();
+  return cachedState;
+}
+
+async function flushStateToStorage() {
+  if (!dirty || flushing || !cachedState) return;
+  flushing = true;
+  const snapshot = cachedState;
+  try {
+    await writeState(snapshot);
+    if (cachedState === snapshot) dirty = false;
+  } catch (e) {
+    console.error("Błąd zapisu do magazynu (ponowię za chwilę):", e.message);
+  } finally {
+    flushing = false;
+  }
+}
+
+setInterval(flushStateToStorage, FLUSH_INTERVAL_MS);
+
+// Przy zamykaniu instancji (deploy/restart na Render) dopisz zaległe zmiany
+process.on("SIGTERM", async () => {
+  try { await flushStateToStorage(); } catch (e) { /* najlepsze co możemy */ }
+  process.exit(0);
+});
+
 function registerRoutes() {
   app.post("/api/login", (req, res) => {
     const username = String(req.body?.username || "").trim();
@@ -88,25 +124,23 @@ function registerRoutes() {
 
   app.get("/api/state", async (req, res) => {
     try {
-      res.json(await readState());
+      res.json(await loadStateCached());
     } catch (e) {
       console.error("Błąd odczytu:", e.message);
       res.status(500).json({ error: "Nie udało się wczytać danych" });
     }
   });
 
-  app.put("/api/state", async (req, res) => {
+  app.put("/api/state", (req, res) => {
     const body = req.body;
     if (!body || typeof body !== "object" || !Array.isArray(body.employees)) {
       return res.status(400).json({ error: "Nieprawidłowy format danych" });
     }
-    try {
-      await writeState(body);
-      res.json({ ok: true });
-    } catch (e) {
-      console.error("Błąd zapisu:", e.message);
-      res.status(500).json({ error: "Nie udało się zapisać danych" });
-    }
+    // Zapis do pamięci — do gista trafi zbiorczo (interwał), co chroni
+    // konto GitHub przed limitem częstych zapisów.
+    cachedState = body;
+    dirty = true;
+    res.json({ ok: true });
   });
 
   app.use(express.static(ROOT));
