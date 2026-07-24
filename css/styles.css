@@ -1324,6 +1324,14 @@ tr:hover .cell-zm[data-code] {
     border-left: 2px solid var(--border);
 }
 
+/* pracownik wyłączony ze statystyk absencji działu (np. kierownik) */
+.cell-abs.abs-excluded {
+    color: var(--text-muted) !important;
+    background: var(--bg-elev) !important;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
 .cell-actions {
     display: flex;
     align-items: center;
@@ -1923,6 +1931,35 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
 
 .form-row--trainings {
     gap: 0.45rem;
+}
+
+/* wiersz z checkboxem (np. wykluczenie ze statystyk absencji) */
+.form-row--check {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.55rem;
+    cursor: pointer;
+}
+
+.form-row--check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    flex: none;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+.form-check-text {
+    font-size: 0.85rem;
+    color: var(--text-strong);
+    line-height: 1.35;
+}
+
+.form-check-text .opt {
+    color: var(--text-muted);
+    font-style: normal;
+    font-size: 0.78rem;
 }
 
 /* ─── grupa checkboxów funkcji ───────────────────────────────────────── */

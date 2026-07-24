@@ -5,7 +5,7 @@
 
   // ─── konfiguracja ─────────────────────────────────────────────────────
   const STORAGE_KEY = "kalendarz-urlopow-v1";
-  const STATE_VERSION = 8;
+  const STATE_VERSION = 9;
   const YEAR_MIN = 2024;
   const YEAR_MAX = 2060;
 
@@ -108,7 +108,7 @@
   }
 
   function normalizeAin(raw) {
-    return String(raw || "").replace(/\D/g, "").slice(0, 10);
+    return String(raw || "").replace(/\D/g, "").slice(0, 9);
   }
 
   function normalizeEmployeeFields(emp) {
@@ -116,6 +116,7 @@
     emp.trainings = normalizeTrainingList(emp.trainings, legacyDept);
     if ("dept" in emp) delete emp.dept;
     emp.ain = normalizeAin(emp.ain);
+    emp.absExcluded = Boolean(emp.absExcluded);
   }
 
   const POLISH_MONTHS = [
@@ -420,13 +421,23 @@
       s.version = 7;
     }
 
-    // v7 → v8: numer AIN pracownika (10 cyfr)
+    // v7 → v8: numer AIN pracownika
     if (s.version === 7) {
       for (const emp of s.employees || []) {
         if (typeof emp.ain !== "string") emp.ain = "";
         emp.ain = normalizeAin(emp.ain);
       }
       s.version = 8;
+    }
+
+    // v8 → v9: flaga wykluczenia ze statystyk absencji działu (np. kierownik)
+    // + AIN skrócony z 10 do 9 cyfr
+    if (s.version === 8) {
+      for (const emp of s.employees || []) {
+        emp.absExcluded = Boolean(emp.absExcluded);
+        emp.ain = normalizeAin(emp.ain);
+      }
+      s.version = 9;
     }
   }
 
@@ -497,6 +508,7 @@
       lastName:  opts.lastName  || "",
       firstName: opts.firstName || "",
       ain:       normalizeAin(opts.ain),
+      absExcluded: Boolean(opts.absExcluded),
       funcs:     Array.isArray(opts.funcs) ? opts.funcs.slice() : [],
       trainings: normalizeTrainingList(opts.trainings, ""),
       pools,
@@ -1624,6 +1636,7 @@
       lnInput.value = emp.lastName  || "";
       fnInput.value = emp.firstName || "";
       ainInput.value = normalizeAin(emp.ain);
+      document.getElementById("empAbsExcluded").checked = Boolean(emp.absExcluded);
       populateTrainDeptSelect();
       setModalTrainings(emp.trainings);
       buildFuncCheckboxes(Array.isArray(emp.funcs) ? emp.funcs : []);
@@ -1633,6 +1646,7 @@
       lnInput.value = "";
       fnInput.value = "";
       ainInput.value = "";
+      document.getElementById("empAbsExcluded").checked = false;
       populateTrainDeptSelect();
       setModalTrainings([]);
       buildFuncCheckboxes([]);
@@ -1660,12 +1674,13 @@
     const ain       = normalizeAin(ainInput.value);
     const trainings = empModalTrainings.slice();
     const funcs     = readSelectedFuncs();
+    const absExcluded = document.getElementById("empAbsExcluded").checked;
 
     if (!lastName)  { lnInput.focus(); showToast("Nazwisko jest wymagane"); return; }
     if (!firstName) { fnInput.focus(); showToast("Imię jest wymagane");    return; }
-    if (ain && ain.length !== 10) {
+    if (ain && ain.length !== 9) {
       ainInput.focus();
-      showToast("Nr AIN musi mieć dokładnie 10 cyfr");
+      showToast("Nr AIN musi mieć dokładnie 9 cyfr");
       return;
     }
 
@@ -1677,13 +1692,14 @@
         emp.ain       = ain;
         emp.trainings = trainings;
         emp.funcs     = funcs;
+        emp.absExcluded = absExcluded;
       }
       saveState();
       closeEmpModal();
       renderAll();
       showToast("Zapisano zmiany");
     } else {
-      state.employees.push(makeEmployee({ lastName, firstName, ain, trainings, funcs }));
+      state.employees.push(makeEmployee({ lastName, firstName, ain, trainings, funcs, absExcluded }));
       saveState();
       closeEmpModal();
       renderAll();
@@ -2136,32 +2152,50 @@
     const year = state.year;
     const workDays = countWorkingDaysInYear(year);
     let totalAbsent = 0;
+    let countedEmps = 0;
 
     for (const emp of state.employees) {
       const absent = countEmpAbsentDays(emp, year);
-      totalAbsent += absent;
+      const excluded = Boolean(emp.absExcluded);
+      if (!excluded) {
+        totalAbsent += absent;
+        countedEmps++;
+      }
       const td = document.querySelector(
         `#kalendarzBodyFrozen tr[data-emp-id="${emp.id}"] td.cell-abs`
       );
       if (!td) continue;
       const pct = workDays > 0 ? (absent / workDays) * 100 : 0;
-      const col = absencePctColor(pct);
-      td.textContent = formatPct(pct);
-      td.title = `${getDisplayName(emp)}: ${absent} dni absencji (${ABSENCE_CODES_LABEL}) z ${workDays} dni roboczych w ${year}. Urlopy U i D nie są wliczane.`;
-      td.style.backgroundColor = col.bg;
-      td.style.color = col.fg;
+      if (excluded) {
+        // Pracownik wyłączony ze statystyk działu — pokazujemy jego % na szaro
+        td.textContent = formatPct(pct) + " ✕";
+        td.title = `${getDisplayName(emp)}: ${absent} dni absencji z ${workDays} dni roboczych w ${year}. NIE wliczany do statystyk absencji działu (opcja w edycji pracownika).`;
+        td.style.backgroundColor = "";
+        td.style.color = "";
+        td.classList.add("abs-excluded");
+      } else {
+        const col = absencePctColor(pct);
+        td.textContent = formatPct(pct);
+        td.title = `${getDisplayName(emp)}: ${absent} dni absencji (${ABSENCE_CODES_LABEL}) z ${workDays} dni roboczych w ${year}. Urlopy U i D nie są wliczane.`;
+        td.style.backgroundColor = col.bg;
+        td.style.color = col.fg;
+        td.classList.remove("abs-excluded");
+      }
     }
 
     const teamEl = document.getElementById("absTeamPct");
     if (teamEl) {
-      const teamPct = workDays > 0 && state.employees.length > 0
-        ? (totalAbsent / (workDays * state.employees.length)) * 100
+      const teamPct = workDays > 0 && countedEmps > 0
+        ? (totalAbsent / (workDays * countedEmps)) * 100
         : 0;
       const col = absencePctColor(teamPct);
       teamEl.textContent = formatPct(teamPct);
       teamEl.style.backgroundColor = col.bg;
       teamEl.style.color = col.fg;
-      teamEl.title = `Średnia absencja działu: ${totalAbsent} dni absencji / (${workDays} dni roboczych × ${state.employees.length} pracowników). Wliczane kody: ${ABSENCE_CODES_LABEL} — bez urlopów planowanych (U, D).`;
+      const excludedNote = countedEmps < state.employees.length
+        ? ` Pominięto ${state.employees.length - countedEmps} os. wyłączonych ze statystyk (✕).`
+        : "";
+      teamEl.title = `Średnia absencja działu: ${totalAbsent} dni absencji / (${workDays} dni roboczych × ${countedEmps} pracowników). Wliczane kody: ${ABSENCE_CODES_LABEL} — bez urlopów planowanych (U, D).${excludedNote}`;
     }
   }
 
