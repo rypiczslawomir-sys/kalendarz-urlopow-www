@@ -1787,7 +1787,10 @@
     FUNCTIONS.forEach((f) => { byFunc[f.id] = { func: f, total: 0, present: 0, absent: 0 }; });
     const unassigned = { total: 0, present: 0, absent: 0 };
 
-    for (const emp of state.employees) {
+    // Osoby wykluczone ze statystyk (np. kierownik) nie liczą się do obsady
+    const counted = state.employees.filter((e) => !e.absExcluded);
+
+    for (const emp of counted) {
       const absent = isEmpAbsentOn(emp, key);
       const funcs = Array.isArray(emp.funcs) ? emp.funcs : [];
       if (funcs.length === 0) {
@@ -1802,8 +1805,8 @@
         if (absent) bucket.absent++; else bucket.present++;
       }
     }
-    const totalEmps = state.employees.length;
-    const totalPresent = state.employees.filter((e) => !isEmpAbsentOn(e, key)).length;
+    const totalEmps = counted.length;
+    const totalPresent = counted.filter((e) => !isEmpAbsentOn(e, key)).length;
     return {
       totalEmps,
       totalPresent,
