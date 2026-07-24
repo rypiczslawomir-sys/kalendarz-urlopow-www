@@ -22,12 +22,12 @@ const IS_PROD = process.env.NODE_ENV === "production";
 // Tryb desktopowy (Electron): lokalna aplikacja bez logowania, dane w pliku
 const DESKTOP = process.env.DESKTOP_MODE === "1";
 
-if (IS_PROD && SESSION_SECRET === "dev-only-change-me-in-production") {
+if (IS_PROD && !DESKTOP && SESSION_SECRET === "dev-only-change-me-in-production") {
   console.error("Ustaw SESSION_SECRET przed uruchomieniem w produkcji.");
   process.exit(1);
 }
 
-if (IS_PROD && storageMode() !== "gist") {
+if (IS_PROD && !DESKTOP && storageMode() !== "gist") {
   console.error("Ustaw GITHUB_GIST_ID i GITHUB_TOKEN — dane na Render muszą być w GitHub Gist.");
   process.exit(1);
 }
@@ -134,7 +134,7 @@ function registerRoutes() {
     }
   });
 
-  app.put("/api/state", async (req, res) => {
+  const saveStateHandler = async (req, res) => {
     const body = req.body;
     if (!body || typeof body !== "object" || !Array.isArray(body.employees)) {
       return res.status(400).json({ error: "Nieprawidłowy format danych" });
@@ -148,7 +148,11 @@ function registerRoutes() {
       try { await flushStateToStorage(); } catch (e) { /* interwał ponowi */ }
     }
     res.json({ ok: true });
-  });
+  };
+
+  app.put("/api/state", saveStateHandler);
+  // POST przyjmuje awaryjny zapis navigator.sendBeacon przy zamykaniu strony
+  app.post("/api/state", saveStateHandler);
 
   app.use(express.static(ROOT));
 

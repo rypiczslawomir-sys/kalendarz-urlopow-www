@@ -171,6 +171,7 @@
   let lastProwLayupToast = 0;       // debounce ostrzeżenia prow-layup
   let _holMapCache = { year: null, map: null };
   let selectedDayKey = null;        // wybrany dzień dla panelu statystyk (nie persistowany)
+  let selectedDayKeys = new Set();  // zaznaczone dni (Ctrl+klik = wiele) dla panelu sumy urlopów
   let viewMode = "year";            // zakres widoku: "year" | "month" | "weeks"
   let viewMonth = new Date().getMonth();
   let viewWeekFromIdx = 0;          // indeksy w liście tygodni roku
@@ -188,6 +189,9 @@
 
   // ─── persistence (serwer) ─────────────────────────────────────────────
   let saveTimer = null;
+  // Wskaźnik zapisu w nagłówku: dirty = zmiany czekają na wysłanie/potwierdzenie
+  const saveInfo = { dirty: false, error: false, lastSavedAt: null, everChanged: false };
+  let lastSaveErrToast = 0;
 
   async function loadState() {
     try {
@@ -241,6 +245,9 @@
   }
 
   function saveState() {
+    saveInfo.dirty = true;
+    saveInfo.everChanged = true;
+    updateSaveStatus();
     clearTimeout(saveTimer);
     saveTimer = setTimeout(flushSave, 1500);
   }
@@ -258,10 +265,58 @@
         return;
       }
       if (!res.ok) throw new Error("HTTP " + res.status);
+      saveInfo.dirty = false;
+      saveInfo.error = false;
+      saveInfo.lastSavedAt = Date.now();
+      updateSaveStatus();
     } catch (e) {
       console.warn("Nie udało się zapisać:", e);
-      showToast("Błąd zapisu — odśwież stronę i spróbuj ponownie.");
+      saveInfo.error = true;
+      updateSaveStatus();
+      if (Date.now() - lastSaveErrToast > 15000) {
+        lastSaveErrToast = Date.now();
+        showToast("Błąd zapisu — ponawiam automatycznie…");
+      }
+      // Automatyczna ponowna próba — zmiany wciąż czekają w pamięci
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(flushSave, 5000);
     }
+  }
+
+  function fmtAgo(ms) {
+    const s = Math.floor(ms / 1000);
+    if (s < 5) return "przed chwilą";
+    if (s < 60) return s + " s temu";
+    const m = Math.floor(s / 60);
+    if (m < 60) return m + " min temu";
+    const d = new Date(Date.now() - ms);
+    return "o " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+
+  function updateSaveStatus() {
+    const el = document.getElementById("saveStatus");
+    if (!el) return;
+    if (saveInfo.error && saveInfo.dirty) {
+      el.className = "save-status error";
+      el.textContent = "⚠ Błąd zapisu — ponawiam…";
+      el.title = "Nie udało się wysłać zmian na serwer. Próba zostanie powtórzona automatycznie. Nie zamykaj strony.";
+      return;
+    }
+    if (saveInfo.dirty) {
+      el.className = "save-status dirty";
+      el.textContent = "● Zapisywanie…";
+      el.title = "Zmiany są wysyłane na serwer. Poczekaj na „Zapisano” przed zamknięciem strony.";
+      return;
+    }
+    if (saveInfo.lastSavedAt) {
+      el.className = "save-status saved";
+      el.textContent = "✓ Zapisano · " + fmtAgo(Date.now() - saveInfo.lastSavedAt);
+      el.title = "Wszystkie zmiany zostały wysłane na serwer — można bezpiecznie zamknąć stronę.";
+      return;
+    }
+    el.className = "save-status idle";
+    el.textContent = "Brak zmian";
+    el.title = "Od otwarcia strony nie wprowadzono żadnych zmian.";
   }
 
   function migrateState(s) {
@@ -959,10 +1014,10 @@
         th.title = "⚠ Brak prowadzącego lay-up — kliknij, aby zobaczyć obsadę";
       }
       if (key === todayKey) th.classList.add("today");
-      if (key === selectedDayKey) th.classList.add("selected");
+      if (selectedDayKeys.has(key)) th.classList.add("selected");
 
       th.innerHTML = `<span class="day-num">${d.getDate()}</span><span class="day-dow">${POLISH_DOW[d.getDay()]}</span>`;
-      th.addEventListener("click", () => selectDay(key));
+      th.addEventListener("click", (e) => selectDay(key, e.ctrlKey || e.metaKey));
       trDaysS.appendChild(th);
     });
     theadScroll.appendChild(trDaysS);
@@ -1913,20 +1968,106 @@
     `;
   }
 
-  function selectDay(key) {
-    selectedDayKey = key;
-    // wizualne podświetlenie wybranego dnia
+  function selectDay(key, additive) {
+    if (additive && key) {
+      // Ctrl/Cmd+klik: dodaj lub usuń dzień z zaznaczenia
+      if (selectedDayKeys.has(key)) {
+        selectedDayKeys.delete(key);
+        if (selectedDayKey === key) {
+          const rest = [...selectedDayKeys].sort();
+          selectedDayKey = rest.length ? rest[rest.length - 1] : null;
+        }
+      } else {
+        selectedDayKeys.add(key);
+        selectedDayKey = key;
+      }
+    } else {
+      selectedDayKey = key;
+      selectedDayKeys = new Set(key ? [key] : []);
+    }
+    applySelectionHighlights();
+    renderDayStats();
+    renderVacSelection();
+  }
+
+  function applySelectionHighlights() {
     const all = document.querySelectorAll(".kalendarz-scroll thead .day-header.selected, .kalendarz-scroll tbody .day-cell.col-selected");
     all.forEach((el) => {
       el.classList.remove("selected");
       el.classList.remove("col-selected");
     });
-    if (!key) { renderDayStats(); return; }
-    const head = document.querySelector(`.kalendarz-scroll thead .day-header[data-date-key="${key}"]`);
-    if (head) head.classList.add("selected");
-    const bodyCells = document.querySelectorAll(`.kalendarz-scroll tbody .day-cell[data-date-key="${key}"]`);
-    bodyCells.forEach((c) => c.classList.add("col-selected"));
-    renderDayStats();
+    for (const key of selectedDayKeys) {
+      const head = document.querySelector(`.kalendarz-scroll thead .day-header[data-date-key="${key}"]`);
+      if (head) head.classList.add("selected");
+      const bodyCells = document.querySelectorAll(`.kalendarz-scroll tbody .day-cell[data-date-key="${key}"]`);
+      bodyCells.forEach((c) => c.classList.add("col-selected"));
+    }
+  }
+
+  // ─── panel: suma urlopów w zaznaczone dni ─────────────────────────────
+  function renderVacSelection() {
+    const body = document.getElementById("vacSelBody");
+    if (!body) return;
+
+    const keys = [...selectedDayKeys].sort();
+    if (!keys.length) {
+      body.innerHTML = `<div class="day-stats-empty">Kliknij datę w nagłówku (Ctrl+klik = kilka dni), aby zobaczyć sumę urlopów.</div>`;
+      return;
+    }
+
+    // Suma godzin per kod absencji + liczba osób
+    const byCode = new Map();
+    const people = new Set();
+    let totalHours = 0;
+    for (const key of keys) {
+      for (const emp of state.employees) {
+        const val = emp.days ? emp.days[key] : null;
+        const code = getCode(val);
+        if (!code) continue;
+        const hrs = getHours(val);
+        byCode.set(code, (byCode.get(code) || 0) + hrs);
+        people.add(emp.id);
+        totalHours += hrs;
+      }
+    }
+
+    const dayLabels = keys.map((k) => {
+      const d = parseDateKey(k);
+      return d ? `${d.getDate()}.${String(d.getMonth() + 1).padStart(2, "0")}` : k;
+    }).join(", ");
+
+    let rows = "";
+    for (const c of CODES) {
+      const hrs = byCode.get(c.code);
+      if (!hrs) continue;
+      rows += `
+        <div class="vac-sel-row">
+          <span class="vac-sel-code" title="${c.label}"><b>${c.code}</b> ${c.label}</span>
+          <span class="vac-sel-nums">${formatUsage(hrs / 8)} dn. · <b>${formatUsage(hrs)} h</b></span>
+        </div>`;
+    }
+    if (!rows) {
+      rows = `<div class="day-stats-empty">Brak absencji w zaznaczone dni.</div>`;
+    }
+
+    const totalRow = totalHours > 0 ? `
+      <div class="vac-sel-row vac-sel-total">
+        <span class="vac-sel-code">Razem (${people.size} os.)</span>
+        <span class="vac-sel-nums">${formatUsage(totalHours / 8)} dn. · <b>${formatUsage(totalHours)} h</b></span>
+      </div>` : "";
+
+    body.innerHTML = `
+      <div class="vac-sel-days">
+        <span>Dni: <b>${dayLabels}</b></span>
+        <button type="button" class="vac-sel-clear" id="vacSelClearBtn" title="Wyczyść zaznaczenie">wyczyść</button>
+      </div>
+      ${rows}
+      ${totalRow}
+      <div class="vac-sel-hint">Ctrl + klik na datę — zaznacz kilka dni. 1 dzień = 8 h.</div>
+    `;
+
+    const clearBtn = document.getElementById("vacSelClearBtn");
+    if (clearBtn) clearBtn.addEventListener("click", () => selectDay(null));
   }
 
   // ─── summary ──────────────────────────────────────────────────────────
@@ -2371,24 +2512,25 @@
 
     document.getElementById("brandSubtitle").textContent = `— rok ${state.year}`;
 
-    // Domyślne zaznaczenie: dziś (jeśli mieści się w bieżącym roku), inaczej 1 stycznia
+    // Zaznaczenie tylko z bieżącego roku; domyślnie dziś, inaczej 1 stycznia
+    selectedDayKeys = new Set([...selectedDayKeys].filter((k) => k.startsWith(state.year + "-")));
     if (!selectedDayKey || !selectedDayKey.startsWith(state.year + "-")) {
       const today = new Date();
       if (today.getFullYear() === state.year) selectedDayKey = todayKey;
       else selectedDayKey = `${state.year}-01-01`;
+      selectedDayKeys.add(selectedDayKey);
     }
+    if (!selectedDayKeys.size && selectedDayKey) selectedDayKeys.add(selectedDayKey);
 
     document.documentElement.style.setProperty("--frozen-width", frozenPanelWidthPx() + "px");
 
     renderHead(dates, holMap, todayKey);
     renderBody(dates, holMap);
-    // dopisz klasę col-selected po zbudowaniu wierszy
-    if (selectedDayKey) {
-      const bodyCells = document.querySelectorAll(`.kalendarz-scroll tbody .day-cell[data-date-key="${selectedDayKey}"]`);
-      bodyCells.forEach((c) => c.classList.add("col-selected"));
-    }
+    // dopisz klasy zaznaczenia po zbudowaniu wierszy
+    applySelectionHighlights();
     updateSummary();
     renderDayStats();
+    renderVacSelection();
     renderTrainingStats();
     // Ponowne wyrównanie po pełnym renderze (fonty/układ mogły się zmienić)
     requestAnimationFrame(syncRowHeights);
@@ -2502,6 +2644,39 @@
     document.getElementById("trainingStatsToggleBtn").addEventListener("click", () => {
       const collapsed = trainingStatsPanel.classList.toggle("collapsed");
       document.getElementById("trainingStatsToggleBtn").textContent = collapsed ? "+" : "−";
+    });
+
+    const vacSelPanel = document.getElementById("vacSelPanel");
+    document.getElementById("vacSelToggleBtn").addEventListener("click", () => {
+      const collapsed = vacSelPanel.classList.toggle("collapsed");
+      document.getElementById("vacSelToggleBtn").textContent = collapsed ? "+" : "−";
+    });
+
+    // Wskaźnik zapisu: odświeżaj licznik co sekundę
+    updateSaveStatus();
+    setInterval(updateSaveStatus, 1000);
+
+    // Ostrzeż przed zamknięciem strony, gdy zmiany nie dotarły na serwer.
+    // W Electronie preventDefault blokowałby zamknięcie okna bez komunikatu,
+    // więc tam polegamy tylko na awaryjnym sendBeacon niżej.
+    const isElectron = /Electron/i.test(navigator.userAgent);
+    if (!isElectron) {
+      window.addEventListener("beforeunload", (e) => {
+        if (saveInfo.dirty) {
+          e.preventDefault();
+          e.returnValue = "";
+        }
+      });
+    }
+
+    // Awaryjny zapis przy zamykaniu/ukrywaniu strony — sendBeacon działa
+    // nawet w trakcie zamykania karty (wysyła POST)
+    window.addEventListener("pagehide", () => {
+      if (!saveInfo.dirty || !navigator.sendBeacon) return;
+      try {
+        const blob = new Blob([JSON.stringify(state)], { type: "application/json" });
+        navigator.sendBeacon("/api/state", blob);
+      } catch (e) { /* best effort */ }
     });
 
     // Export / import

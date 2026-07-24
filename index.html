@@ -17,6 +17,8 @@
         </div>
 
         <div class="header-controls">
+            <span class="save-status idle" id="saveStatus" title="Od otwarcia strony nie wprowadzono żadnych zmian.">Brak zmian</span>
+
             <label class="year-selector">
                 <span>Rok:</span>
                 <select id="yearSelect"></select>
@@ -130,17 +132,32 @@
         </div>
     </aside>
 
-    <!-- Pływające okno: przeszkoleni pracownicy (prawy dolny róg) -->
-    <aside class="training-stats-panel" id="trainingStatsPanel">
-        <div class="day-stats-header">
-            <div class="day-stats-title">
-                <span class="day-stats-icon">🎓</span>
-                Przeszkoleni pracownicy
+    <!-- Prawy dolny róg: suma urlopów + przeszkoleni pracownicy -->
+    <div class="dock-right">
+        <aside class="vac-sel-panel" id="vacSelPanel">
+            <div class="day-stats-header">
+                <div class="day-stats-title">
+                    <span class="day-stats-icon">🧮</span>
+                    Suma urlopów — zaznaczone dni
+                </div>
+                <button class="day-stats-toggle" id="vacSelToggleBtn" title="Zwiń / rozwiń">−</button>
             </div>
-            <button class="day-stats-toggle" id="trainingStatsToggleBtn" title="Zwiń / rozwiń">−</button>
-        </div>
-        <div class="training-stats-body" id="trainingStatsBody"></div>
-    </aside>
+            <div class="vac-sel-body" id="vacSelBody">
+                <div class="day-stats-empty">Kliknij datę w nagłówku (Ctrl+klik = kilka dni), aby zobaczyć sumę urlopów.</div>
+            </div>
+        </aside>
+
+        <aside class="training-stats-panel" id="trainingStatsPanel">
+            <div class="day-stats-header">
+                <div class="day-stats-title">
+                    <span class="day-stats-icon">🎓</span>
+                    Przeszkoleni pracownicy
+                </div>
+                <button class="day-stats-toggle" id="trainingStatsToggleBtn" title="Zwiń / rozwiń">−</button>
+            </div>
+            <div class="training-stats-body" id="trainingStatsBody"></div>
+        </aside>
+    </div>
 
     <!-- Modal: dodaj / edytuj pracownika -->
     <div class="modal-backdrop" id="empModal" hidden>

@@ -2418,12 +2418,22 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
 
 /* ─── panel: przeszkoleni pracownicy (prawy dolny róg) ───────────────── */
 
-.training-stats-panel {
+/* Prawy dolny róg: kolumna paneli (suma urlopów + szkolenia) */
+.dock-right {
     position: fixed;
     right: 14px;
     bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    z-index: 80;
+}
+
+.training-stats-panel {
+    position: static;
     width: min(440px, calc(100vw - 28px));
-    max-height: 72vh;
+    max-height: 62vh;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -2702,4 +2712,133 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
 
 .kalendarz tbody .day-cell.col-selected:hover {
     box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* ─── wskaźnik zapisu (nagłówek) ──────────────────────────────────────── */
+
+.save-status {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    cursor: default;
+    transition: background 0.25s, color 0.25s, border-color 0.25s;
+}
+
+.save-status.idle {
+    color: var(--text-muted);
+    background: var(--bg-elev);
+    border-color: var(--border);
+}
+
+.save-status.dirty {
+    color: #92400e;
+    background: #fef3c7;
+    border-color: #fcd34d;
+}
+
+.save-status.saved {
+    color: #166534;
+    background: #dcfce7;
+    border-color: #86efac;
+}
+
+.save-status.error {
+    color: #991b1b;
+    background: #fee2e2;
+    border-color: #fca5a5;
+}
+
+/* ─── panel: suma urlopów w zaznaczone dni ────────────────────────────── */
+
+.vac-sel-panel {
+    width: min(340px, calc(100vw - 28px));
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+    font-size: 0.85rem;
+    overflow: hidden;
+}
+
+.vac-sel-panel.collapsed .vac-sel-body {
+    display: none;
+}
+
+.vac-sel-body {
+    padding: 0.55rem 0.7rem 0.65rem;
+}
+
+.vac-sel-days {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+}
+
+.vac-sel-days b {
+    color: var(--text);
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.vac-sel-clear {
+    border: none;
+    background: none;
+    color: var(--accent);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    flex: none;
+}
+
+.vac-sel-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.22rem 0;
+    border-bottom: 1px dashed var(--border);
+}
+
+.vac-sel-code {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vac-sel-code b {
+    display: inline-block;
+    min-width: 2ch;
+    color: var(--accent-strong, var(--accent));
+}
+
+.vac-sel-nums {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.vac-sel-total {
+    border-bottom: none;
+    margin-top: 0.3rem;
+    padding-top: 0.4rem;
+    border-top: 2px solid var(--border);
+    font-weight: 600;
+}
+
+.vac-sel-total .vac-sel-nums b {
+    font-size: 1rem;
+    color: var(--accent-strong, var(--accent));
+}
+
+.vac-sel-hint {
+    margin-top: 0.5rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
 }
