@@ -1071,6 +1071,7 @@
       const trS = document.createElement("tr");
       trF.dataset.empId = emp.id;
       trS.dataset.empId = emp.id;
+      if (emp.absExcluded) trF.classList.add("emp-excluded");
       linkRowHover(trF, trS);
 
       const tdLp = document.createElement("td");

@@ -1324,12 +1324,27 @@ tr:hover .cell-zm[data-code] {
     border-left: 2px solid var(--border);
 }
 
-/* pracownik wyłączony ze statystyk absencji działu (np. kierownik) */
+/* pracownik wyłączony ze statystyk absencji działu (np. kierownik) —
+   delikatne fioletowe oznaczenie */
 .cell-abs.abs-excluded {
-    color: var(--text-muted) !important;
-    background: var(--bg-elev) !important;
-    font-weight: 500;
+    color: #6d28d9 !important;
+    background: #ede9fe !important;
+    font-weight: 600;
     font-size: 0.75rem;
+}
+
+.kalendarz-frozen tr.emp-excluded .cell-name {
+    background: #f3effc !important;
+    box-shadow: inset 3px 0 0 #a78bfa;
+}
+
+.kalendarz-frozen tr.emp-excluded .emp-name {
+    color: #6d28d9;
+}
+
+.kalendarz-frozen tr.emp-excluded:hover .cell-name,
+.kalendarz-frozen tr.emp-excluded.row-sync-hover .cell-name {
+    background: #ede9fe !important;
 }
 
 .cell-actions {
