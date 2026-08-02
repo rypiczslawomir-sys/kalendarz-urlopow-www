@@ -56,6 +56,87 @@
     --row-h:         42px;
 }
 
+/* ─── motyw ciemny (oryginalna paleta z pierwszej wersji) ─────────────── */
+html[data-theme="dark"] {
+    --bg-page:       #0b1220;
+    --bg-card:       #131c2e;
+    --bg-elev:       #243149;
+    --bg-row:        #1c2740;
+    --bg-row-alt:    #21304b;
+    --bg-header:     #0e1729;
+    --bg-row-hover:  #2c4368;
+    --border:        #2a3957;
+    --border-soft:   #243149;
+
+    --text:          #f1f5f9;
+    --text-strong:   #ffffff;
+    --text-muted:    #b8c2d1;
+    --text-dim:      #7d8aa3;
+
+    --accent:        #38bdf8;
+    --accent-strong: #0ea5e9;
+
+    --workday-bg:    #38445e;
+    --workday-text:  #ffffff;
+
+    --weekend-bg:    #4a5468;
+    --weekend-text:  #cbd5e1;
+
+    --holiday-bg:    #6a3f47;
+    --holiday-text:  #ffd7da;
+}
+
+/* Ciemne warianty elementów o stałych (jasnych) kolorach */
+html[data-theme="dark"] .save-status.idle {
+    color: var(--text-muted);
+    background: var(--bg-elev);
+    border-color: var(--border);
+}
+html[data-theme="dark"] .save-status.dirty {
+    color: #fcd34d;
+    background: #4a3407;
+    border-color: #92720c;
+}
+html[data-theme="dark"] .save-status.saved {
+    color: #86efac;
+    background: #113322;
+    border-color: #1d6b3f;
+}
+html[data-theme="dark"] .save-status.error {
+    color: #fca5a5;
+    background: #481414;
+    border-color: #8f2727;
+}
+html[data-theme="dark"] .cell-abs.abs-excluded {
+    color: #c4b5fd !important;
+    background: #312457 !important;
+}
+html[data-theme="dark"] .kalendarz-frozen tr.emp-excluded .cell-name {
+    background: #241b3a !important;
+    box-shadow: inset 3px 0 0 #7c5cd6;
+}
+html[data-theme="dark"] .kalendarz-frozen tr.emp-excluded .emp-name {
+    color: #c4b5fd;
+}
+html[data-theme="dark"] .kalendarz-frozen tr.emp-excluded:hover .cell-name,
+html[data-theme="dark"] .kalendarz-frozen tr.emp-excluded.row-sync-hover .cell-name {
+    background: #2d2151 !important;
+}
+html[data-theme="dark"] .btn-danger {
+    background: #481414;
+    color: #fca5a5;
+    border-color: #8f2727;
+}
+html[data-theme="dark"] .app-header {
+    background: linear-gradient(to bottom, #0e1729, #131c2e);
+}
+html[data-theme="dark"] .month-header.odd-month {
+    background: #1a2438;
+}
+html[data-theme="dark"] .month-header.even-month {
+    background: #212e47;
+}
+
 html, body {
     margin: 0;
     height: 100%;

@@ -2692,6 +2692,26 @@
       document.getElementById("vacSelToggleBtn").textContent = collapsed ? "+" : "−";
     });
 
+    // Motyw jasny/ciemny — zapamiętywany na tym urządzeniu
+    function applyTheme(theme) {
+      const dark = theme === "dark";
+      if (dark) document.documentElement.dataset.theme = "dark";
+      else delete document.documentElement.dataset.theme;
+      const btn = document.getElementById("themeToggleBtn");
+      if (btn) {
+        btn.textContent = dark ? "☀️" : "🌙";
+        btn.title = dark ? "Przełącz na jasny motyw" : "Przełącz na ciemny motyw";
+      }
+      try { localStorage.setItem("kalendarzTheme", dark ? "dark" : "light"); } catch (e) { /* ignore */ }
+    }
+    let currentTheme = "light";
+    try { if (localStorage.getItem("kalendarzTheme") === "dark") currentTheme = "dark"; } catch (e) { /* ignore */ }
+    applyTheme(currentTheme);
+    document.getElementById("themeToggleBtn").addEventListener("click", () => {
+      currentTheme = currentTheme === "dark" ? "light" : "dark";
+      applyTheme(currentTheme);
+    });
+
     // Wskaźnik zapisu: odświeżaj licznik co sekundę
     updateSaveStatus();
     setInterval(updateSaveStatus, 1000);

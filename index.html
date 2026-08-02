@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kalendarz urlopowy</title>
+    <script>
+        // Zastosuj zapisany motyw zanim wczyta się CSS (bez mignięcia)
+        (function () {
+            try {
+                if (localStorage.getItem("kalendarzTheme") === "dark") {
+                    document.documentElement.dataset.theme = "dark";
+                }
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -39,6 +49,8 @@
                 ⬆ Import
                 <input type="file" id="importInput" accept="application/json" hidden>
             </label>
+
+            <button class="btn btn-ghost" id="themeToggleBtn" title="Przełącz na ciemny motyw">🌙</button>
 
             <button class="btn btn-ghost" id="logoutBtn" title="Wyloguj">Wyloguj</button>
         </div>
