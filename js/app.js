@@ -132,6 +132,7 @@
   //            nieplanowane/usprawiedliwione wg praktyki HR i prawa pracy);
   //            urlopy planowane (wypoczynkowy, dodatkowy) się NIE wliczają.
   const CODES = [
+    { code: "ZAL", label: "Zaległy (ub. rok)", article: "art. 168 KP",  defaultPool:  0,   hourly: false, absence: false },
     { code: "U",   label: "Wypoczynkowy",     article: "art. 154 KP",   defaultPool: 26,   hourly: false, absence: false },
     { code: "D",   label: "Dodatkowy",        article: "regulamin",     defaultPool:  6,   hourly: false, absence: false },
     { code: "UŻ",  label: "Na żądanie",       article: "art. 167² KP",  defaultPool:  4,   hourly: false, absence: true  },
@@ -2295,8 +2296,9 @@
 
   // ─── wydruk rocznego kalendarza pracownika ────────────────────────────
   // Na wydruku pokazujemy urlopy planowane: wypoczynkowy, dodatkowy, na żądanie
-  const PRINT_CODES = ["U", "D", "UŻ"];
+  const PRINT_CODES = ["ZAL", "U", "D", "UŻ"];
   const PRINT_COLORS = {
+    "ZAL": { bg: "#0d9488", fg: "#ecfdfa" },
     "U":  { bg: "#10b981", fg: "#042f1f" },
     "D":  { bg: "#84cc16", fg: "#1a2400" },
     "UŻ": { bg: "#f59e0b", fg: "#2a1c00" },

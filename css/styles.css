@@ -39,6 +39,7 @@
     --today-text:    #1c1300;
 
     /* kody absencji (CSS var nazwy ASCII-safe; UŻ → UZ) */
+    --code-ZAL: #0d9488;   /* urlop zaległy z ubiegłego roku */
     --code-U:   #10b981;   /* wypoczynkowy */
     --code-D:   #84cc16;   /* dodatkowy */
     --code-UZ:  #f59e0b;   /* na żądanie */
@@ -707,6 +708,7 @@ table.kalendarz.kalendarz-scroll {
 .cell-pool[data-code], .cell-wyk[data-code], .cell-l4[data-code], .cell-m[data-code], .cell-zm[data-code] {
     --tint: transparent;
 }
+.cell-pool[data-code="ZAL"], .cell-wyk[data-code="ZAL"] { --tint: var(--code-ZAL); }
 .cell-pool[data-code="U"],   .cell-wyk[data-code="U"]   { --tint: var(--code-U);   }
 .cell-pool[data-code="D"],   .cell-wyk[data-code="D"]   { --tint: var(--code-D);   }
 .cell-pool[data-code="UŻ"],  .cell-wyk[data-code="UŻ"]  { --tint: var(--code-UZ);  }
@@ -806,6 +808,7 @@ tr:hover .cell-l4[data-code] {
     line-height: 1.1;
 }
 
+.hdr-code-ZAL { color: var(--code-ZAL); }
 .hdr-code-U   { color: var(--code-U); }
 .hdr-code-D   { color: var(--code-D); }
 .hdr-code-UZ  { color: var(--code-UZ); }
@@ -1420,6 +1423,7 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     box-shadow: inset 0 0 0 2px rgba(239, 68, 68, 0.5);
 }
 
+.day-cell[data-code="ZAL"] { background: var(--code-ZAL); color: #ecfdfa; }
 .day-cell[data-code="U"]   { background: var(--code-U);   color: #042f1f; }
 .day-cell[data-code="D"]   { background: var(--code-D);   color: #1a2400; }
 .day-cell[data-code="UŻ"]  { background: var(--code-UZ);  color: #2a1c00; }
