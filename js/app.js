@@ -2061,7 +2061,54 @@
     panel.style.right = "";
     panel.style.bottom = "";
     panel.style.zIndex = "";
-    try { localStorage.removeItem(storageKey); } catch (e) { /* ignore */ }
+    panel.style.width = "";
+    panel.style.height = "";
+    delete panel.dataset.savedH;
+    try {
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem(storageKey.replace("kalPanelPos:", "kalPanelSize:"));
+    } catch (e) { /* ignore */ }
+  }
+
+  // Regulacja wielkości okienka (uchwyt w prawym dolnym rogu) + zapamiętanie
+  function makePanelResizable(panelId) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    panel.classList.add("panel-resizable");
+    const storageKey = "kalPanelSize:" + panelId;
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+      if (saved && typeof saved.w === "number" && typeof saved.h === "number") {
+        panel.style.width = saved.w + "px";
+        if (!panel.classList.contains("collapsed")) panel.style.height = saved.h + "px";
+      }
+    } catch (e) { /* ignore */ }
+
+    // Zapisuj rozmiar po zmianie (tylko gdy panel rozwinięty)
+    let t = null;
+    const ro = new ResizeObserver(() => {
+      if (panel.classList.contains("collapsed")) return;
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const r = panel.getBoundingClientRect();
+        if (r.width < 50 || r.height < 30) return;
+        try { localStorage.setItem(storageKey, JSON.stringify({ w: Math.round(r.width), h: Math.round(r.height) })); } catch (e) { /* ignore */ }
+      }, 300);
+    });
+    ro.observe(panel);
+
+    // Przy zwinięciu zdejmij wymuszoną wysokość, przy rozwinięciu przywróć
+    const mo = new MutationObserver(() => {
+      if (panel.classList.contains("collapsed")) {
+        if (panel.style.height) panel.dataset.savedH = panel.style.height;
+        panel.style.height = "";
+      } else if (panel.dataset.savedH) {
+        panel.style.height = panel.dataset.savedH;
+        delete panel.dataset.savedH;
+      }
+    });
+    mo.observe(panel, { attributes: true, attributeFilter: ["class"] });
   }
 
   function makePanelDraggable(panelId) {
@@ -2136,35 +2183,41 @@
       return `<option value="${i}"${i === weekHoursIdx ? " selected" : ""}>${label}</option>`;
     }).join("");
 
-    // Suma godzin wszystkich absencji w tygodniu (wszystkie kody, wszyscy pracownicy)
+    // Podział dzień po dniu: tylko dni i kody, w których faktycznie są absencje
     const g = list[weekHoursIdx];
-    const byCode = new Map();
     const people = new Set();
     let totalHours = 0;
+    let daysHtml = "";
     for (const d of g.dates) {
       const key = H.dateKey(d);
+      const byCode = new Map(); // kod -> { count, hours }
       for (const emp of state.employees) {
         const val = emp.days ? emp.days[key] : null;
         const code = getCode(val);
         if (!code) continue;
         const hrs = getHours(val);
-        byCode.set(code, (byCode.get(code) || 0) + hrs);
+        const cur = byCode.get(code) || { count: 0, hours: 0 };
+        cur.count++;
+        cur.hours += hrs;
+        byCode.set(code, cur);
         people.add(emp.id);
         totalHours += hrs;
       }
-    }
+      if (!byCode.size) continue; // dzień bez absencji — pomijamy dla czytelności
 
-    let rows = "";
-    for (const c of CODES) {
-      const hrs = byCode.get(c.code);
-      if (!hrs) continue;
-      rows += `
-        <div class="vac-sel-row">
-          <span class="vac-sel-code" title="${c.label}"><b>${c.code}</b> ${c.label}</span>
-          <span class="vac-sel-nums">${formatUsage(hrs / 8)} dn. · <b>${formatUsage(hrs)} h</b></span>
-        </div>`;
+      let rows = "";
+      for (const c of CODES) {
+        const entry = byCode.get(c.code);
+        if (!entry) continue;
+        rows += `
+          <div class="vac-sel-row wh-row">
+            <span class="vac-sel-code" title="${c.label}"><b>${c.code}</b> ${c.label}</span>
+            <span class="vac-sel-nums">${entry.count} os. · <b>${formatUsage(entry.hours)} h</b></span>
+          </div>`;
+      }
+      daysHtml += `<div class="wh-day">${POLISH_DOW[d.getDay()]} ${fmtShortDate(d)}</div>${rows}`;
     }
-    if (!rows) rows = `<div class="day-stats-empty">Brak absencji w tym tygodniu.</div>`;
+    if (!daysHtml) daysHtml = `<div class="day-stats-empty">Brak absencji w tym tygodniu.</div>`;
 
     const totalRow = totalHours > 0 ? `
       <div class="vac-sel-row vac-sel-total">
@@ -2176,7 +2229,7 @@
       <div class="week-hours-picker">
         <label>Tydzień: <select id="weekHoursSel">${options}</select></label>
       </div>
-      ${rows}
+      ${daysHtml}
       ${totalRow}
     `;
     document.getElementById("weekHoursSel").addEventListener("change", (e) => {
@@ -2892,9 +2945,10 @@
       document.getElementById("weekHoursToggleBtn").textContent = collapsed ? "+" : "−";
     });
 
-    // Pływające okienka można przesuwać za nagłówek (pozycja zapamiętywana)
+    // Pływające okienka: przesuwanie za nagłówek + regulacja wielkości
+    // (pozycja i rozmiar zapamiętywane na urządzeniu)
     ["dayStats", "funcChartPanel", "trainingStatsPanel", "vacSelPanel", "weekHoursPanel"]
-      .forEach(makePanelDraggable);
+      .forEach((id) => { makePanelDraggable(id); makePanelResizable(id); });
 
     // Motyw jasny/ciemny — zapamiętywany na tym urządzeniu
     function applyTheme(theme) {

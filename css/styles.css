@@ -3043,6 +3043,37 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     cursor: grabbing;
 }
 
+/* Regulacja wielkości okienek — uchwyt w prawym dolnym rogu */
+.panel-resizable {
+    resize: both;
+    overflow: auto;
+    min-width: 240px;
+    min-height: 40px;
+    max-width: 92vw;
+    max-height: 88vh;
+}
+
+.panel-resizable.collapsed {
+    resize: none;
+    min-height: 0;
+}
+
+/* Nagłówki dni w panelu godzin tygodnia */
+.wh-day {
+    margin-top: 0.5rem;
+    padding-bottom: 2px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+
+.wh-row .vac-sel-code {
+    padding-left: 0.4rem;
+}
+
 /* ─── stały alert: brak prowadzącego lay-up ───────────────────────────── */
 
 .prow-alert-bar {
