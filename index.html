@@ -76,6 +76,9 @@
         <span class="view-hint">💡 Kliknij numer tygodnia w nagłówku, aby wyczyścić absencje tego tygodnia</span>
     </section>
 
+    <!-- Stały czerwony alert: brak prowadzącego lay-up w dniu roboczym -->
+    <div class="prow-alert-bar" id="prowAlertBar" hidden></div>
+
     <main class="table-wrap" id="tableWrap">
         <div class="cal-split">
             <div class="cal-frozen" id="calFrozen">
@@ -144,8 +147,19 @@
         </div>
     </aside>
 
-    <!-- Prawy dolny róg: suma urlopów + przeszkoleni pracownicy -->
+    <!-- Prawy dolny róg: godziny tygodnia + suma urlopów + przeszkoleni pracownicy -->
     <div class="dock-right">
+        <aside class="week-hours-panel" id="weekHoursPanel">
+            <div class="day-stats-header">
+                <div class="day-stats-title">
+                    <span class="day-stats-icon">⏱</span>
+                    Godziny absencji — tydzień
+                </div>
+                <button class="day-stats-toggle" id="weekHoursToggleBtn" title="Zwiń / rozwiń">−</button>
+            </div>
+            <div class="week-hours-body" id="weekHoursBody"></div>
+        </aside>
+
         <aside class="vac-sel-panel" id="vacSelPanel">
             <div class="day-stats-header">
                 <div class="day-stats-title">

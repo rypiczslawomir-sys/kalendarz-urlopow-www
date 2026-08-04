@@ -2009,6 +2009,14 @@
     applySelectionHighlights();
     renderDayStats();
     renderVacSelection();
+    // Synchronizuj panel godzin tygodnia z klikniętym dniem
+    if (key) {
+      const wi = weekIndexForKey(key);
+      if (wi !== null && wi !== weekHoursIdx) {
+        weekHoursIdx = wi;
+        renderWeekHours();
+      }
+    }
   }
 
   function applySelectionHighlights() {
@@ -2023,6 +2031,190 @@
       const bodyCells = document.querySelectorAll(`.kalendarz-scroll tbody .day-cell[data-date-key="${key}"]`);
       bodyCells.forEach((c) => c.classList.add("col-selected"));
     }
+  }
+
+  // ─── przesuwanie pływających paneli (drag & drop za nagłówek) ────────
+  function clampPanelPos(panel, left, top) {
+    const w = panel.offsetWidth || 300;
+    const minLeft = 8 - Math.max(0, w - 90); // można wysunąć, ale uchwyt zostaje
+    const maxLeft = window.innerWidth - 90;
+    return {
+      left: Math.min(Math.max(left, minLeft), maxLeft),
+      top: Math.min(Math.max(top, 0), window.innerHeight - 44),
+    };
+  }
+
+  function setPanelPos(panel, left, top) {
+    const p = clampPanelPos(panel, left, top);
+    panel.style.position = "fixed";
+    panel.style.left = p.left + "px";
+    panel.style.top = p.top + "px";
+    panel.style.right = "auto";
+    panel.style.bottom = "auto";
+    panel.style.zIndex = "95";
+  }
+
+  function resetPanelPos(panel, storageKey) {
+    panel.style.position = "";
+    panel.style.left = "";
+    panel.style.top = "";
+    panel.style.right = "";
+    panel.style.bottom = "";
+    panel.style.zIndex = "";
+    try { localStorage.removeItem(storageKey); } catch (e) { /* ignore */ }
+  }
+
+  function makePanelDraggable(panelId) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const header = panel.querySelector(".day-stats-header");
+    if (!header) return;
+    const storageKey = "kalPanelPos:" + panelId;
+    header.title = "Przeciągnij, aby przesunąć okienko. Podwójny klik — wróć na domyślne miejsce.";
+
+    // Przywróć zapamiętaną pozycję
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+      if (saved && typeof saved.left === "number" && typeof saved.top === "number") {
+        setPanelPos(panel, saved.left, saved.top);
+      }
+    } catch (e) { /* ignore */ }
+
+    header.addEventListener("dblclick", (e) => {
+      if (e.target.closest("button")) return;
+      resetPanelPos(panel, storageKey);
+    });
+
+    header.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || e.target.closest("button")) return;
+      e.preventDefault();
+      const rect = panel.getBoundingClientRect();
+      const offX = e.clientX - rect.left;
+      const offY = e.clientY - rect.top;
+      let moved = false;
+      panel.classList.add("panel-dragging");
+      const move = (ev) => {
+        moved = true;
+        setPanelPos(panel, ev.clientX - offX, ev.clientY - offY);
+      };
+      const up = () => {
+        document.removeEventListener("pointermove", move);
+        document.removeEventListener("pointerup", up);
+        panel.classList.remove("panel-dragging");
+        if (moved) {
+          const r = panel.getBoundingClientRect();
+          try { localStorage.setItem(storageKey, JSON.stringify({ left: r.left, top: r.top })); } catch (e2) { /* ignore */ }
+        }
+      };
+      document.addEventListener("pointermove", move);
+      document.addEventListener("pointerup", up);
+    });
+  }
+
+  // ─── panel: godziny absencji w wybranym tygodniu ─────────────────────
+  let weekHoursIdx = null; // indeks w getYearWeeksList(state.year)
+
+  function weekIndexForKey(key) {
+    const list = getYearWeeksList(state.year);
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].dates.some((d) => H.dateKey(d) === key)) return i;
+    }
+    return null;
+  }
+
+  function renderWeekHours() {
+    const body = document.getElementById("weekHoursBody");
+    if (!body) return;
+    const list = getYearWeeksList(state.year);
+    if (weekHoursIdx === null || weekHoursIdx < 0 || weekHoursIdx >= list.length) {
+      const idx = weekIndexForKey(selectedDayKey || H.dateKey(new Date()));
+      weekHoursIdx = idx === null ? 0 : idx;
+    }
+
+    const options = list.map((g, i) => {
+      const label = `${H.fiscalWeekLabel(g.wk, g.wk === 1)} (${fmtShortDate(g.dates[0])}–${fmtShortDate(g.dates[g.dates.length - 1])})`;
+      return `<option value="${i}"${i === weekHoursIdx ? " selected" : ""}>${label}</option>`;
+    }).join("");
+
+    // Suma godzin wszystkich absencji w tygodniu (wszystkie kody, wszyscy pracownicy)
+    const g = list[weekHoursIdx];
+    const byCode = new Map();
+    const people = new Set();
+    let totalHours = 0;
+    for (const d of g.dates) {
+      const key = H.dateKey(d);
+      for (const emp of state.employees) {
+        const val = emp.days ? emp.days[key] : null;
+        const code = getCode(val);
+        if (!code) continue;
+        const hrs = getHours(val);
+        byCode.set(code, (byCode.get(code) || 0) + hrs);
+        people.add(emp.id);
+        totalHours += hrs;
+      }
+    }
+
+    let rows = "";
+    for (const c of CODES) {
+      const hrs = byCode.get(c.code);
+      if (!hrs) continue;
+      rows += `
+        <div class="vac-sel-row">
+          <span class="vac-sel-code" title="${c.label}"><b>${c.code}</b> ${c.label}</span>
+          <span class="vac-sel-nums">${formatUsage(hrs / 8)} dn. · <b>${formatUsage(hrs)} h</b></span>
+        </div>`;
+    }
+    if (!rows) rows = `<div class="day-stats-empty">Brak absencji w tym tygodniu.</div>`;
+
+    const totalRow = totalHours > 0 ? `
+      <div class="vac-sel-row vac-sel-total">
+        <span class="vac-sel-code">Razem (${people.size} os.)</span>
+        <span class="vac-sel-nums">${formatUsage(totalHours / 8)} dn. · <b>${formatUsage(totalHours)} h</b></span>
+      </div>` : "";
+
+    body.innerHTML = `
+      <div class="week-hours-picker">
+        <label>Tydzień: <select id="weekHoursSel">${options}</select></label>
+      </div>
+      ${rows}
+      ${totalRow}
+    `;
+    document.getElementById("weekHoursSel").addEventListener("change", (e) => {
+      weekHoursIdx = parseInt(e.target.value, 10) || 0;
+      renderWeekHours();
+    });
+  }
+
+  // ─── stały alert: brak prowadzącego lay-up w dniach roboczych ─────────
+  function renderProwAlert() {
+    const bar = document.getElementById("prowAlertBar");
+    if (!bar) return;
+    const days = [];
+    for (const d of H.buildYearDates(state.year)) {
+      const key = H.dateKey(d);
+      if (checkProwLayupCoverage(key).warn) days.push({ key, d });
+    }
+    if (!days.length) {
+      bar.hidden = true;
+      bar.innerHTML = "";
+      return;
+    }
+    const MAX = 12;
+    const chips = days.slice(0, MAX).map(({ key, d }) =>
+      `<button type="button" class="prow-alert-chip" data-key="${key}" title="Kliknij — pokaż ten dzień">${fmtShortDate(d)}</button>`
+    ).join("");
+    const more = days.length > MAX ? `<span class="prow-alert-more">+${days.length - MAX} więcej</span>` : "";
+    const dniWord = days.length === 1 ? "dzień roboczy" : "dni roboczych";
+    bar.innerHTML = `<span class="warn-ico">⚠</span><b>BRAK PROWADZĄCEGO LAY-UP — ${days.length} ${dniWord}:</b>${chips}${more}`;
+    bar.hidden = false;
+    bar.querySelectorAll(".prow-alert-chip").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const key = btn.dataset.key;
+        selectDay(key);
+        const th = document.querySelector(`.kalendarz-scroll thead .day-header[data-date-key="${key}"]`);
+        if (th) th.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      });
+    });
   }
 
   // ─── panel: suma urlopów w zaznaczone dni ─────────────────────────────
@@ -2110,6 +2302,8 @@
     document.getElementById("statHolidays").textContent = H.getPolishHolidays(year).length;
 
     updateAbsenceStats();
+    renderWeekHours();
+    renderProwAlert();
   }
 
   // ─── procent absencji ─────────────────────────────────────────────────
@@ -2691,6 +2885,16 @@
       const collapsed = vacSelPanel.classList.toggle("collapsed");
       document.getElementById("vacSelToggleBtn").textContent = collapsed ? "+" : "−";
     });
+
+    const weekHoursPanel = document.getElementById("weekHoursPanel");
+    document.getElementById("weekHoursToggleBtn").addEventListener("click", () => {
+      const collapsed = weekHoursPanel.classList.toggle("collapsed");
+      document.getElementById("weekHoursToggleBtn").textContent = collapsed ? "+" : "−";
+    });
+
+    // Pływające okienka można przesuwać za nagłówek (pozycja zapamiętywana)
+    ["dayStats", "funcChartPanel", "trainingStatsPanel", "vacSelPanel", "weekHoursPanel"]
+      .forEach(makePanelDraggable);
 
     // Motyw jasny/ciemny — zapamiętywany na tym urządzeniu
     function applyTheme(theme) {

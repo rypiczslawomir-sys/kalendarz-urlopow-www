@@ -2979,3 +2979,113 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     font-size: 0.72rem;
     color: var(--text-muted);
 }
+
+/* ─── panel: godziny absencji w tygodniu ──────────────────────────────── */
+
+.week-hours-panel {
+    width: min(340px, calc(100vw - 28px));
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+    font-size: 0.85rem;
+    overflow: hidden;
+}
+
+.week-hours-panel.collapsed .week-hours-body {
+    display: none;
+}
+
+.week-hours-body {
+    padding: 0.55rem 0.7rem 0.65rem;
+}
+
+.week-hours-picker {
+    margin-bottom: 0.45rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.week-hours-picker select {
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.45rem;
+    color: var(--text-strong);
+    font-size: 0.8rem;
+    outline: none;
+    cursor: pointer;
+    max-width: 230px;
+}
+
+.week-hours-picker select:focus {
+    border-color: var(--accent);
+}
+
+/* ─── przesuwanie pływających paneli ──────────────────────────────────── */
+
+.day-stats-header {
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+
+.day-stats-header .day-stats-toggle {
+    cursor: pointer;
+}
+
+.panel-dragging {
+    opacity: 0.93;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.35) !important;
+}
+
+.panel-dragging .day-stats-header {
+    cursor: grabbing;
+}
+
+/* ─── stały alert: brak prowadzącego lay-up ───────────────────────────── */
+
+.prow-alert-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.4rem 1.2rem;
+    background: #dc2626;
+    color: #ffffff;
+    font-size: 0.83rem;
+    font-weight: 600;
+    border-bottom: 2px solid #991b1b;
+    flex-shrink: 0;
+}
+
+.prow-alert-bar .warn-ico {
+    font-size: 1rem;
+    animation: prowPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes prowPulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.45; }
+}
+
+.prow-alert-chip {
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    border-radius: 999px;
+    padding: 0.08rem 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.prow-alert-chip:hover {
+    background: rgba(255, 255, 255, 0.32);
+}
+
+.prow-alert-more {
+    font-size: 0.78rem;
+    opacity: 0.9;
+}
