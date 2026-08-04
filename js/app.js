@@ -2211,11 +2211,15 @@
         if (!entry) continue;
         rows += `
           <div class="vac-sel-row wh-row">
-            <span class="vac-sel-code" title="${c.label}"><b>${c.code}</b> ${c.label}</span>
+            <span class="vac-sel-code" title="${c.label}"><span class="wh-chip" data-code="${c.code}">${c.code}</span> ${c.label}</span>
             <span class="vac-sel-nums">${entry.count} os. · <b>${formatUsage(entry.hours)} h</b></span>
           </div>`;
       }
-      daysHtml += `<div class="wh-day">${POLISH_DOW[d.getDay()]} ${fmtShortDate(d)}</div>${rows}`;
+      daysHtml += `
+        <div class="wh-day-group">
+          <div class="wh-day">${POLISH_DOW[d.getDay()]} ${fmtShortDate(d)}</div>
+          ${rows}
+        </div>`;
     }
     if (!daysHtml) daysHtml = `<div class="day-stats-empty">Brak absencji w tym tygodniu.</div>`;
 
@@ -2308,7 +2312,7 @@
       if (!hrs) continue;
       rows += `
         <div class="vac-sel-row">
-          <span class="vac-sel-code" title="${c.label}"><b>${c.code}</b> ${c.label}</span>
+          <span class="vac-sel-code" title="${c.label}"><span class="wh-chip" data-code="${c.code}">${c.code}</span> ${c.label}</span>
           <span class="vac-sel-nums">${formatUsage(hrs / 8)} dn. · <b>${formatUsage(hrs)} h</b></span>
         </div>`;
     }

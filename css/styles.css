@@ -3058,21 +3058,60 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     min-height: 0;
 }
 
-/* Nagłówki dni w panelu godzin tygodnia */
-.wh-day {
+/* Panel godzin tygodnia: sekcje dni jako osobne karty */
+.wh-day-group {
     margin-top: 0.5rem;
-    padding-bottom: 2px;
+    padding: 0.3rem 0.5rem 0.4rem;
+    background: var(--bg-row-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.wh-day-group:first-of-type {
+    margin-top: 0.15rem;
+}
+
+.wh-day {
+    padding-bottom: 3px;
+    margin-bottom: 2px;
     font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-muted);
+    color: var(--text-strong);
     border-bottom: 1px solid var(--border);
 }
 
-.wh-row .vac-sel-code {
-    padding-left: 0.4rem;
+.wh-day-group .vac-sel-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
 }
+
+/* Kolorowe plakietki kodów absencji (kolory jak w kalendarzu) */
+.wh-chip {
+    display: inline-block;
+    min-width: 2.4em;
+    padding: 0.06rem 0.3rem;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-align: center;
+    vertical-align: middle;
+    letter-spacing: 0.02em;
+}
+
+.wh-chip[data-code="ZAL"] { background: var(--code-ZAL); color: #ecfdfa; }
+.wh-chip[data-code="U"]   { background: var(--code-U);   color: #042f1f; }
+.wh-chip[data-code="D"]   { background: var(--code-D);   color: #1a2400; }
+.wh-chip[data-code="UŻ"]  { background: var(--code-UZ);  color: #2a1c00; }
+.wh-chip[data-code="SW"]  { background: var(--code-SW);  color: #1d0e2e; }
+.wh-chip[data-code="OPR"] { background: var(--code-OPR); color: #062d34; }
+.wh-chip[data-code="OP"]  { background: var(--code-OP);  color: #2a2200; }
+.wh-chip[data-code="KREW"] { background: var(--code-KREW); color: #ffffff; }
+.wh-chip[data-code="NUN"]  { background: var(--code-NUN);  color: #f1f5f9; }
+.wh-chip[data-code="M"]   { background: var(--code-M);   color: #3f0720; }
+.wh-chip[data-code="ZM"]  { background: var(--code-ZM);  color: #fdf4ff; }
+.wh-chip[data-code="L"]   { background: var(--code-L);   color: #2a0707; }
 
 /* ─── stały alert: brak prowadzącego lay-up ───────────────────────────── */
 
