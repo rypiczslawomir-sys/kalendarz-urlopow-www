@@ -482,12 +482,28 @@
     const clamped = Math.max(0, pool);
     return isHourlyCode(code) ? clamped : clamped * 8;
   }
-  function wouldFitInPool(emp, newCode, oldVal, newHoursForCell) {
-    const limit = poolHoursLimit(emp, newCode);
+  function fitsPool(emp, code, oldVal, newHoursForCell, includeUZinU) {
+    const limit = poolHoursLimit(emp, code);
     if (limit === Infinity) return true;
-    const currentHours = getUsage(emp, newCode, state.year).totalHours;
-    const oldHoursForThisCell = (getCode(oldVal) === newCode) ? getHours(oldVal) : 0;
-    return (currentHours - oldHoursForThisCell + newHoursForCell) <= limit;
+    const oldCode = getCode(oldVal);
+    let current = getUsage(emp, code, state.year).totalHours;
+    let oldCounted = oldCode === code ? getHours(oldVal) : 0;
+    if (includeUZinU && code === "U") {
+      current += getUsage(emp, "UŻ", state.year).totalHours;
+      if (oldCode === "UŻ") oldCounted = getHours(oldVal);
+    }
+    return (current - oldCounted + newHoursForCell) <= limit;
+  }
+
+  // UŻ (na żądanie) jest częścią puli urlopu wypoczynkowego (art. 167² KP):
+  // dzień UŻ pomniejsza również limit U.
+  function wouldFitInPool(emp, newCode, oldVal, newHoursForCell) {
+    if (newCode === "U") return fitsPool(emp, "U", oldVal, newHoursForCell, true);
+    if (newCode === "UŻ") {
+      return fitsPool(emp, "UŻ", oldVal, newHoursForCell, false) &&
+             fitsPool(emp, "U", oldVal, newHoursForCell, true);
+    }
+    return fitsPool(emp, newCode, oldVal, newHoursForCell, false);
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────
@@ -1236,8 +1252,10 @@
       if (!td) continue;
 
       const usage = getUsage(emp, c.code, state.year);
-      const totalHours = usage.totalHours;
-      const days = usage.days;
+      let totalHours = usage.totalHours;
+      // U pokazuje łączne zużycie: wypoczynkowy + na żądanie (UŻ schodzi z puli U)
+      if (c.code === "U") totalHours += getUsage(emp, "UŻ", state.year).totalHours;
+      const days = totalHours / 8;
       const pool = emp.pools[c.code];
       const hourly = isHourlyCode(c.code);
 
@@ -1274,6 +1292,10 @@
             tip = `${fullDays} dni (${totalHours} godz.)`;
           }
           tip += ` z puli ${pool} ${hourly ? "godz." : "dni"}`;
+          if (c.code === "U") {
+            const uzDays = getUsage(emp, "UŻ", state.year).days;
+            if (uzDays > 0) tip += ` (w tym ${formatUsage(uzDays)} dni UŻ — na żądanie schodzi z puli U)`;
+          }
           if (usedDisplay > pool) tip += " — PRZEKROCZONO LIMIT";
           else if (usedDisplay > 0) tip += " — wykorzystano w limicie";
           td.title = tip;
@@ -1419,7 +1441,11 @@
             const code = newCode;
             const pool = emp.pools[code];
             const unit = isHourlyCode(code) ? "godz." : "dni";
-            notifyBlocked(`Pula ${code} wyczerpana (${pool} ${unit})`);
+            if (code === "UŻ" && fitsPool(emp, "UŻ", oldVal, newHours, false)) {
+              notifyBlocked(`Pula urlopu wypoczynkowego (U: ${emp.pools["U"]} dni) wyczerpana — UŻ pomniejsza limit U`);
+            } else {
+              notifyBlocked(`Pula ${code} wyczerpana (${pool} ${unit})`);
+            }
           }
           return "pool";
         }
@@ -2557,6 +2583,118 @@
     showToast(msg);
   }
 
+  // ─── formularz: ręczne wpisywanie absencji ────────────────────────────
+  function absFormRowHtml() {
+    const codeOpts = CODES.map((c) =>
+      `<option value="${c.code}"${c.code === state.activeCode ? " selected" : ""}>${c.code} — ${c.label}</option>`
+    ).join("");
+    const min = `${state.year}-01-01`;
+    const max = `${state.year}-12-31`;
+    return `<div class="af-row">
+      <select class="af-code" title="Rodzaj absencji">${codeOpts}</select>
+      <input type="date" class="af-from" min="${min}" max="${max}" title="Od (włącznie)">
+      <span class="af-sep">→</span>
+      <input type="date" class="af-to" min="${min}" max="${max}" title="Do (włącznie)">
+      <button type="button" class="af-remove" title="Usuń ten wiersz">×</button>
+    </div>`;
+  }
+
+  function addAbsFormRow() {
+    const wrap = document.getElementById("absFormRows");
+    wrap.insertAdjacentHTML("beforeend", absFormRowHtml());
+    const row = wrap.lastElementChild;
+    row.querySelector(".af-remove").addEventListener("click", () => {
+      row.remove();
+      if (!wrap.children.length) addAbsFormRow();
+    });
+    // Wygoda: po wybraniu "od" podpowiedz tę samą datę w "do"
+    const fromEl = row.querySelector(".af-from");
+    const toEl = row.querySelector(".af-to");
+    fromEl.addEventListener("change", () => {
+      if (fromEl.value && (!toEl.value || toEl.value < fromEl.value)) toEl.value = fromEl.value;
+    });
+  }
+
+  function openAbsFormModal() {
+    if (!state.employees.length) { showToast("Najpierw dodaj pracowników"); return; }
+    const sel = document.getElementById("absFormEmp");
+    sel.innerHTML = state.employees
+      .map((e) => `<option value="${e.id}">${escapeHtml(getDisplayName(e))}</option>`)
+      .join("");
+    const wrap = document.getElementById("absFormRows");
+    wrap.innerHTML = "";
+    addAbsFormRow();
+    document.getElementById("absFormModal").hidden = false;
+  }
+
+  function closeAbsFormModal() {
+    document.getElementById("absFormModal").hidden = true;
+  }
+
+  function submitAbsForm() {
+    const empId = document.getElementById("absFormEmp").value;
+    const emp = state.employees.find((e) => e.id === empId);
+    if (!emp) { showToast("Wybierz pracownika"); return; }
+
+    const rows = [...document.querySelectorAll("#absFormRows .af-row")];
+    let added = 0, changed = 0, same = 0, skippedFree = 0, blockedPool = 0, invalid = 0;
+    const holMaps = {};
+    const holFor = (year) => (holMaps[year] = holMaps[year] || H.holidayMap(year));
+
+    for (const row of rows) {
+      const code = row.querySelector(".af-code").value;
+      let from = row.querySelector(".af-from").value;
+      let to = row.querySelector(".af-to").value;
+      if (!from && !to) continue; // pusty wiersz — ignoruj
+      if (!from || !to) { invalid++; row.classList.add("af-row-error"); continue; }
+      row.classList.remove("af-row-error");
+      if (from > to) { const t = from; from = to; to = t; }
+
+      const start = parseDateKey(from);
+      const end = parseDateKey(to);
+      if (!start || !end) { invalid++; continue; }
+
+      for (const cur = new Date(start); cur <= end; cur.setDate(cur.getDate() + 1)) {
+        const key = H.dateKey(cur);
+        if (H.isWeekend(cur) || holFor(cur.getFullYear()).has(key)) {
+          skippedFree++;
+          continue;
+        }
+        const oldVal = emp.days[key];
+        const newVal = makeValue(code, 8);
+        if (oldVal && valuesEqual(oldVal, newVal)) { same++; continue; }
+        if (!wouldFitInPool(emp, code, oldVal, 8)) { blockedPool++; continue; }
+        if (oldVal) changed++; else added++;
+        emp.days[key] = newVal;
+      }
+    }
+
+    if (invalid) {
+      showToast(`Uzupełnij daty „od" i „do" w ${invalid} wierszu/ach`);
+      return;
+    }
+    if (!added && !changed) {
+      let msg = "Nic nie dodano";
+      if (blockedPool) msg += ` — ${blockedPool} dni przekracza pulę`;
+      else if (same) msg += " — wpisy już istnieją";
+      else if (skippedFree) msg += " — same weekendy/święta";
+      else msg += " — wpisz zakres dat";
+      showToast(msg);
+      return;
+    }
+
+    saveState();
+    renderAll();
+    closeAbsFormModal();
+
+    let msg = `${getDisplayName(emp)}: dodano ${added}`;
+    if (changed) msg += `, nadpisano ${changed}`;
+    if (same) msg += `, bez zmian ${same}`;
+    if (skippedFree) msg += `, pominięto ${skippedFree} (weekend/święto)`;
+    if (blockedPool) msg += `, ${blockedPool} nie zmieściło się w puli`;
+    showToast(msg);
+  }
+
   // ─── panel: suma urlopów w zaznaczone dni ─────────────────────────────
   function renderVacSelection() {
     const body = document.getElementById("vacSelBody");
@@ -2920,13 +3058,22 @@
     let sumPool = 0, sumUsed = 0;
     for (const code of PRINT_CODES) {
       const cDef = CODES.find((x) => x.code === code);
-      const { days } = getUsage(emp, code, year);
+      let days = getUsage(emp, code, year).days;
+      let noteTxt = "";
+      if (code === "U") {
+        // UŻ schodzi z puli urlopu wypoczynkowego
+        days += getUsage(emp, "UŻ", year).days;
+        noteTxt = " (razem z UŻ)";
+      }
       const pool = typeof emp.pools[code] === "number" ? emp.pools[code] : 0;
       const left = Math.max(0, pool - days);
-      sumPool += pool;
-      sumUsed += days;
+      if (code !== "UŻ") {
+        // UŻ mieści się w puli U — nie dublujemy go w sumie
+        sumPool += pool;
+        sumUsed += days;
+      }
       sumRows += `<tr>
-        <td class="lbl"><span class="chip" style="background:${PRINT_COLORS[code].bg}"></span>${cDef.label} (${code})</td>
+        <td class="lbl"><span class="chip" style="background:${PRINT_COLORS[code].bg}"></span>${cDef.label} (${code})${noteTxt}</td>
         <td>${pool}</td>
         <td>${formatUsage(days)}</td>
         <td><b>${formatUsage(left)}</b></td>
@@ -3293,6 +3440,16 @@
     });
     document.getElementById("kronosFile").addEventListener("change", (e) => {
       handleKronosFile(e.target.files && e.target.files[0]);
+    });
+
+    // Ręczne wpisywanie absencji
+    document.getElementById("absFormBtn").addEventListener("click", openAbsFormModal);
+    document.getElementById("absFormCloseBtn").addEventListener("click", closeAbsFormModal);
+    document.getElementById("absFormCancelBtn").addEventListener("click", closeAbsFormModal);
+    document.getElementById("absFormAddRowBtn").addEventListener("click", addAbsFormRow);
+    document.getElementById("absFormSubmitBtn").addEventListener("click", submitAbsForm);
+    document.getElementById("absFormModal").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("absFormModal")) closeAbsFormModal();
     });
 
     // Export / import

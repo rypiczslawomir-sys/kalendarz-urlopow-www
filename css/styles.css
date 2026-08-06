@@ -3252,6 +3252,109 @@ html[data-theme="dark"] .kr-badge-ain  { background: #113322; color: #86efac; }
 html[data-theme="dark"] .kr-badge-name { background: #172a54; color: #93c5fd; }
 html[data-theme="dark"] .kr-badge-no   { background: #481414; color: #fca5a5; }
 
+/* ─── formularz: ręczne wpisywanie absencji ───────────────────────────── */
+
+.abs-form-modal {
+    width: min(560px, 94vw);
+    max-height: 90vh;
+    overflow: auto;
+    padding-bottom: 0.4rem;
+}
+
+.abs-form-modal .form-row,
+.abs-form-modal .af-section-title,
+.abs-form-modal #absFormRows,
+.abs-form-modal #absFormAddRowBtn,
+.abs-form-modal .form-actions {
+    margin-left: 1.1rem;
+    margin-right: 1.1rem;
+}
+
+.af-section-title {
+    margin-top: 0.8rem;
+    margin-bottom: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+}
+
+.af-hint {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text-dim);
+}
+
+.af-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+}
+
+.af-row select,
+.af-row input[type="date"] {
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.4rem;
+    color: var(--text-strong);
+    font-size: 0.8rem;
+    outline: none;
+}
+
+.af-row select:focus,
+.af-row input[type="date"]:focus {
+    border-color: var(--accent);
+}
+
+.af-code {
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.af-sep {
+    color: var(--text-dim);
+    flex: none;
+}
+
+.af-remove {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.af-remove:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+html[data-theme="dark"] .af-remove:hover {
+    background: #481414;
+    border-color: #7f1d1d;
+    color: #fca5a5;
+}
+
+.af-row-error select,
+.af-row-error input[type="date"] {
+    border-color: #dc2626;
+}
+
+#absFormAddRowBtn {
+    margin-top: 0.1rem;
+}
+
 /* ─── stały alert: brak prowadzącego lay-up ───────────────────────────── */
 
 .prow-alert-bar {

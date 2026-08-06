@@ -54,6 +54,10 @@
                 📥 Kronos
             </button>
 
+            <button class="btn btn-ghost" id="absFormBtn" title="Wpisz absencje pracownika ręcznie (zakresy dat)">
+                📝 Wpisz absencje
+            </button>
+
             <button class="btn btn-ghost" id="themeToggleBtn" title="Przełącz na ciemny motyw">🌙</button>
 
             <button class="btn btn-ghost" id="logoutBtn" title="Wyloguj">Wyloguj</button>
@@ -273,6 +277,26 @@
             <div id="kronosEmpList"></div>
             <div class="form-actions">
                 <button type="button" class="btn btn-ghost" id="kronosCloseBtn2">Zamknij</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="absFormModal" hidden>
+        <div class="modal abs-form-modal" role="dialog" aria-labelledby="absFormModalTitle">
+            <div class="modal-header">
+                <h2 id="absFormModalTitle">📝 Wpisz absencje</h2>
+                <button class="modal-close" id="absFormCloseBtn" title="Zamknij">×</button>
+            </div>
+            <label class="form-row">
+                <span class="form-label">Pracownik</span>
+                <select id="absFormEmp"></select>
+            </label>
+            <div class="af-section-title">Absencje <span class="af-hint">(rodzaj + zakres dat; weekendy i święta są pomijane)</span></div>
+            <div id="absFormRows"></div>
+            <button type="button" class="btn btn-ghost btn-sm" id="absFormAddRowBtn">+ Dodaj kolejną absencję</button>
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" id="absFormCancelBtn">Anuluj</button>
+                <button type="button" class="btn btn-primary" id="absFormSubmitBtn">Dodaj do kalendarza</button>
             </div>
         </div>
     </div>
