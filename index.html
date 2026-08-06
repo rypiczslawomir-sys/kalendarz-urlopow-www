@@ -61,6 +61,10 @@
 
             <button class="btn btn-ghost" id="themeToggleBtn" title="Przełącz na ciemny motyw">🌙</button>
 
+            <button class="btn btn-ghost" id="accountsBtn" title="Zarządzaj kontami użytkowników" hidden>👥 Konta</button>
+
+            <button class="btn btn-ghost" id="passwordBtn" title="Zmień swoje hasło" hidden>🔑</button>
+
             <button class="btn btn-ghost" id="aboutBtn" title="O programie">ⓘ</button>
 
             <button class="btn btn-ghost" id="logoutBtn" title="Wyloguj">Wyloguj</button>
@@ -300,6 +304,46 @@
             <div class="form-actions">
                 <button type="button" class="btn btn-ghost" id="absFormCancelBtn">Anuluj</button>
                 <button type="button" class="btn btn-primary" id="absFormSubmitBtn">Dodaj do kalendarza</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="accountsModal" hidden>
+        <div class="modal accounts-modal" role="dialog" aria-labelledby="accountsModalTitle">
+            <div class="modal-header">
+                <h2 id="accountsModalTitle">👥 Konta użytkowników</h2>
+                <button class="modal-close" id="accountsCloseBtn" title="Zamknij">×</button>
+            </div>
+            <div class="acc-info">Każdy użytkownik ma własny, prywatny kalendarz — administrator nie widzi cudzych danych. Serwer robi automatyczną kopię zapasową raz dziennie (ostatnie 7 dni) i możesz ją przywrócić użytkownikowi na jego prośbę.</div>
+            <div class="acc-add">
+                <input type="text" id="accNewLogin" placeholder="login (np. adres e-mail)" autocomplete="off">
+                <input type="password" id="accNewPass" placeholder="hasło startowe (min. 6 znaków)" autocomplete="new-password">
+                <button type="button" class="btn btn-primary btn-sm" id="accAddBtn">Dodaj konto</button>
+            </div>
+            <div id="accList"><div class="day-stats-empty">Wczytywanie…</div></div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" id="accountsCloseBtn2">Zamknij</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="passwordModal" hidden>
+        <div class="modal password-modal" role="dialog" aria-labelledby="passwordModalTitle">
+            <div class="modal-header">
+                <h2 id="passwordModalTitle">🔑 Zmień hasło</h2>
+                <button class="modal-close" id="passwordCloseBtn" title="Zamknij">×</button>
+            </div>
+            <label class="form-row">
+                <span class="form-label">Obecne hasło</span>
+                <input type="password" id="pwOld" autocomplete="current-password">
+            </label>
+            <label class="form-row">
+                <span class="form-label">Nowe hasło <em class="opt">(min. 6 znaków)</em></span>
+                <input type="password" id="pwNew" autocomplete="new-password">
+            </label>
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" id="passwordCancelBtn">Anuluj</button>
+                <button type="button" class="btn btn-primary" id="passwordSubmitBtn">Zmień hasło</button>
             </div>
         </div>
     </div>

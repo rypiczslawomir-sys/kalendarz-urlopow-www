@@ -3357,6 +3357,131 @@ html[data-theme="dark"] .af-remove:hover {
     margin-top: 0.1rem;
 }
 
+/* ─── konta użytkowników ──────────────────────────────────────────────── */
+
+.accounts-modal {
+    width: min(620px, 94vw);
+    max-height: 90vh;
+    overflow: auto;
+    padding-bottom: 0.4rem;
+}
+
+.accounts-modal .acc-info,
+.accounts-modal .acc-add,
+.accounts-modal #accList,
+.accounts-modal .form-actions {
+    margin-left: 1.1rem;
+    margin-right: 1.1rem;
+}
+
+.acc-info {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
+
+.acc-add {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.7rem;
+    margin-bottom: 0.5rem;
+}
+
+.acc-add input {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.35rem 0.5rem;
+    color: var(--text-strong);
+    font-size: 0.8rem;
+    outline: none;
+}
+
+.acc-add input:focus {
+    border-color: var(--accent);
+}
+
+.acc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    padding: 0.45rem 0.2rem;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.acc-main {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.acc-login {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text-strong);
+    word-break: break-all;
+}
+
+.acc-badge {
+    display: inline-block;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.acc-badge-admin {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+html[data-theme="dark"] .acc-badge { background: #172a54; color: #93c5fd; }
+html[data-theme="dark"] .acc-badge-admin { background: #453306; color: #fcd34d; }
+
+.acc-created {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+}
+
+.acc-actions {
+    display: flex;
+    gap: 0.3rem;
+    flex: none;
+}
+
+.acc-backups {
+    padding: 0.3rem 0.2rem 0.5rem 1.3rem;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.acc-backup-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.2rem 0;
+    font-size: 0.8rem;
+    color: var(--text);
+}
+
+.password-modal {
+    width: min(400px, 92vw);
+    padding-bottom: 0.4rem;
+}
+
+.password-modal .form-actions {
+    margin-left: 1.1rem;
+    margin-right: 1.1rem;
+}
+
 /* ─── okno: o programie ───────────────────────────────────────────────── */
 
 .about-modal {

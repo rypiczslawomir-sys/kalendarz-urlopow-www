@@ -2713,6 +2713,223 @@
     document.getElementById("aboutModal").hidden = true;
   }
 
+  // ─── konta użytkowników (panel admina + zmiana hasła) ─────────────────
+  let accountsCache = [];
+
+  async function initAccountUi() {
+    try {
+      const res = await fetch("/api/me", { credentials: "same-origin" });
+      if (!res.ok) return;
+      const me = await res.json();
+      if (me.desktop) return; // wersja desktopowa działa bez kont
+      if (me.role === "admin") document.getElementById("accountsBtn").hidden = false;
+      if (me.user) document.getElementById("passwordBtn").hidden = false;
+    } catch (e) { /* brak połączenia — przyciski zostają ukryte */ }
+  }
+
+  function openAccountsModal() {
+    document.getElementById("accountsModal").hidden = false;
+    loadAccounts();
+  }
+  function closeAccountsModal() {
+    document.getElementById("accountsModal").hidden = true;
+  }
+
+  async function loadAccounts() {
+    const list = document.getElementById("accList");
+    list.innerHTML = '<div class="day-stats-empty">Wczytywanie…</div>';
+    try {
+      const res = await fetch("/api/users", { credentials: "same-origin" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd pobierania");
+      accountsCache = data.users || [];
+      renderAccounts();
+    } catch (e) {
+      list.innerHTML = '<div class="day-stats-empty">Nie udało się pobrać listy kont.</div>';
+    }
+  }
+
+  function accountById(uid) {
+    return accountsCache.find((u) => u.id === uid);
+  }
+
+  function renderAccounts() {
+    const list = document.getElementById("accList");
+    if (!accountsCache.length) {
+      list.innerHTML = '<div class="day-stats-empty">Brak kont.</div>';
+      return;
+    }
+    let html = "";
+    for (const u of accountsCache) {
+      const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString("pl-PL") : "";
+      html += `<div class="acc-row">
+        <div class="acc-main">
+          <span class="acc-login">${escapeHtml(u.login)}</span>
+          <span class="acc-badge${u.role === "admin" ? " acc-badge-admin" : ""}">${u.role === "admin" ? "admin" : "użytkownik"}</span>
+          ${created ? `<span class="acc-created">od ${created}</span>` : ""}
+        </div>
+        <div class="acc-actions">
+          <button type="button" class="btn btn-ghost btn-sm acc-pass-btn" data-uid="${u.id}" title="Ustaw nowe hasło">🔑</button>
+          <button type="button" class="btn btn-ghost btn-sm acc-backups-btn" data-uid="${u.id}" title="Kopie zapasowe (7 dni)">💾</button>
+          ${u.role === "admin" ? "" : `<button type="button" class="btn btn-ghost btn-sm acc-del-btn" data-uid="${u.id}" title="Usuń konto">🗑</button>`}
+        </div>
+      </div>
+      <div class="acc-backups" data-uid="${u.id}" hidden></div>`;
+    }
+    list.innerHTML = html;
+    list.querySelectorAll(".acc-pass-btn").forEach((b) =>
+      b.addEventListener("click", () => resetAccountPassword(b.dataset.uid)));
+    list.querySelectorAll(".acc-del-btn").forEach((b) =>
+      b.addEventListener("click", () => deleteAccount(b.dataset.uid)));
+    list.querySelectorAll(".acc-backups-btn").forEach((b) =>
+      b.addEventListener("click", () => toggleBackups(b.dataset.uid)));
+  }
+
+  async function addAccount() {
+    const loginEl = document.getElementById("accNewLogin");
+    const passEl = document.getElementById("accNewPass");
+    const login = loginEl.value.trim();
+    const password = passEl.value;
+    if (login.length < 3) { loginEl.focus(); showToast("Podaj login (min. 3 znaki, np. e-mail)"); return; }
+    if (password.length < 6) { passEl.focus(); showToast("Hasło startowe musi mieć min. 6 znaków"); return; }
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ login, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || "Nie udało się utworzyć konta"); return; }
+      loginEl.value = "";
+      passEl.value = "";
+      showToast(`Utworzono konto ${login}`);
+      loadAccounts();
+    } catch (e) {
+      showToast("Brak połączenia z serwerem");
+    }
+  }
+
+  async function resetAccountPassword(uid) {
+    const u = accountById(uid);
+    if (!u) return;
+    const password = prompt(`Nowe hasło dla ${u.login} (min. 6 znaków):`);
+    if (password === null) return;
+    if (password.length < 6) { showToast("Hasło musi mieć min. 6 znaków"); return; }
+    try {
+      const res = await fetch(`/api/users/${encodeURIComponent(uid)}/password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || "Nie udało się zmienić hasła"); return; }
+      showToast(`Zmieniono hasło konta ${u.login}`);
+    } catch (e) {
+      showToast("Brak połączenia z serwerem");
+    }
+  }
+
+  async function deleteAccount(uid) {
+    const u = accountById(uid);
+    if (!u) return;
+    if (!confirm(`Usunąć konto ${u.login}? Jego kalendarz zostanie skasowany (kopie zapasowe z ostatnich 7 dni zostaną zachowane).`)) return;
+    try {
+      const res = await fetch(`/api/users/${encodeURIComponent(uid)}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || "Nie udało się usunąć konta"); return; }
+      showToast(`Usunięto konto ${u.login}`);
+      loadAccounts();
+    } catch (e) {
+      showToast("Brak połączenia z serwerem");
+    }
+  }
+
+  async function toggleBackups(uid) {
+    const panel = document.querySelector(`.acc-backups[data-uid="${uid}"]`);
+    if (!panel) return;
+    if (!panel.hidden) { panel.hidden = true; return; }
+    panel.hidden = false;
+    panel.innerHTML = '<div class="day-stats-empty">Wczytywanie kopii…</div>';
+    try {
+      const res = await fetch(`/api/users/${encodeURIComponent(uid)}/backups`, { credentials: "same-origin" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Błąd");
+      const backups = data.backups || [];
+      if (!backups.length) {
+        panel.innerHTML = '<div class="day-stats-empty">Brak kopii zapasowych — powstaną automatycznie przy pierwszych zapisach.</div>';
+        return;
+      }
+      let html = "";
+      for (const b of backups) {
+        const when = b.savedAt ? new Date(b.savedAt).toLocaleString("pl-PL") : b.name;
+        html += `<div class="acc-backup-row">
+          <span class="acc-backup-date">💾 ${escapeHtml(when)}</span>
+          <button type="button" class="btn btn-ghost btn-sm acc-restore-btn" data-uid="${uid}" data-name="${escapeHtml(b.name)}">Przywróć</button>
+        </div>`;
+      }
+      panel.innerHTML = html;
+      panel.querySelectorAll(".acc-restore-btn").forEach((btn) =>
+        btn.addEventListener("click", () => restoreBackup(btn.dataset.uid, btn.dataset.name)));
+    } catch (e) {
+      panel.innerHTML = '<div class="day-stats-empty">Nie udało się pobrać kopii zapasowych.</div>';
+    }
+  }
+
+  async function restoreBackup(uid, name) {
+    const u = accountById(uid);
+    if (!u) return;
+    if (!confirm(`Przywrócić kopię zapasową dla ${u.login}? Jego OBECNY kalendarz zostanie nadpisany stanem z kopii. Użytkownik powinien potem odświeżyć stronę.`)) return;
+    try {
+      const res = await fetch(`/api/users/${encodeURIComponent(uid)}/restore`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || "Nie udało się przywrócić kopii"); return; }
+      const when = data.savedAt ? new Date(data.savedAt).toLocaleString("pl-PL") : "";
+      showToast(`Przywrócono kopię ${when} dla ${u.login}`);
+    } catch (e) {
+      showToast("Brak połączenia z serwerem");
+    }
+  }
+
+  function openPasswordModal() {
+    document.getElementById("pwOld").value = "";
+    document.getElementById("pwNew").value = "";
+    document.getElementById("passwordModal").hidden = false;
+    document.getElementById("pwOld").focus();
+  }
+  function closePasswordModal() {
+    document.getElementById("passwordModal").hidden = true;
+  }
+
+  async function submitPasswordChange() {
+    const oldPassword = document.getElementById("pwOld").value;
+    const newPassword = document.getElementById("pwNew").value;
+    if (newPassword.length < 6) { showToast("Nowe hasło musi mieć min. 6 znaków"); return; }
+    try {
+      const res = await fetch("/api/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ oldPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || "Nie udało się zmienić hasła"); return; }
+      closePasswordModal();
+      showToast("Hasło zmienione");
+    } catch (e) {
+      showToast("Brak połączenia z serwerem");
+    }
+  }
+
   // ─── panel: suma urlopów w zaznaczone dni ─────────────────────────────
   function renderVacSelection() {
     const body = document.getElementById("vacSelBody");
@@ -3476,6 +3693,23 @@
     document.getElementById("aboutOkBtn").addEventListener("click", closeAboutModal);
     document.getElementById("aboutModal").addEventListener("click", (e) => {
       if (e.target === document.getElementById("aboutModal")) closeAboutModal();
+    });
+
+    // Konta użytkowników (admin) + zmiana hasła
+    initAccountUi();
+    document.getElementById("accountsBtn").addEventListener("click", openAccountsModal);
+    document.getElementById("accountsCloseBtn").addEventListener("click", closeAccountsModal);
+    document.getElementById("accountsCloseBtn2").addEventListener("click", closeAccountsModal);
+    document.getElementById("accountsModal").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("accountsModal")) closeAccountsModal();
+    });
+    document.getElementById("accAddBtn").addEventListener("click", addAccount);
+    document.getElementById("passwordBtn").addEventListener("click", openPasswordModal);
+    document.getElementById("passwordCloseBtn").addEventListener("click", closePasswordModal);
+    document.getElementById("passwordCancelBtn").addEventListener("click", closePasswordModal);
+    document.getElementById("passwordSubmitBtn").addEventListener("click", submitPasswordChange);
+    document.getElementById("passwordModal").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("passwordModal")) closePasswordModal();
     });
 
     // Export / import
