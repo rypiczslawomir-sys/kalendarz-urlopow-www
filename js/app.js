@@ -2769,6 +2769,7 @@
           ${created ? `<span class="acc-created">od ${created}</span>` : ""}
         </div>
         <div class="acc-actions">
+          <button type="button" class="btn btn-ghost btn-sm acc-login-btn" data-uid="${u.id}" title="Zmień login">✏️</button>
           <button type="button" class="btn btn-ghost btn-sm acc-pass-btn" data-uid="${u.id}" title="Ustaw nowe hasło">🔑</button>
           <button type="button" class="btn btn-ghost btn-sm acc-backups-btn" data-uid="${u.id}" title="Kopie zapasowe (7 dni)">💾</button>
           ${u.role === "admin" ? "" : `<button type="button" class="btn btn-ghost btn-sm acc-del-btn" data-uid="${u.id}" title="Usuń konto">🗑</button>`}
@@ -2777,6 +2778,8 @@
       <div class="acc-backups" data-uid="${u.id}" hidden></div>`;
     }
     list.innerHTML = html;
+    list.querySelectorAll(".acc-login-btn").forEach((b) =>
+      b.addEventListener("click", () => renameAccount(b.dataset.uid)));
     list.querySelectorAll(".acc-pass-btn").forEach((b) =>
       b.addEventListener("click", () => resetAccountPassword(b.dataset.uid)));
     list.querySelectorAll(".acc-del-btn").forEach((b) =>
@@ -2804,6 +2807,30 @@
       loginEl.value = "";
       passEl.value = "";
       showToast(`Utworzono konto ${login}`);
+      loadAccounts();
+    } catch (e) {
+      showToast("Brak połączenia z serwerem");
+    }
+  }
+
+  async function renameAccount(uid) {
+    const u = accountById(uid);
+    if (!u) return;
+    const login = prompt(`Nowy login dla ${u.login}:`, u.login);
+    if (login === null) return;
+    const trimmed = login.trim();
+    if (trimmed.length < 3) { showToast("Login musi mieć min. 3 znaki"); return; }
+    if (trimmed === u.login) return;
+    try {
+      const res = await fetch(`/api/users/${encodeURIComponent(uid)}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ login: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || "Nie udało się zmienić loginu"); return; }
+      showToast(`Zmieniono login na ${trimmed} — dane i hasło bez zmian`);
       loadAccounts();
     } catch (e) {
       showToast("Brak połączenia z serwerem");

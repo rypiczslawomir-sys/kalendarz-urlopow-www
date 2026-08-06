@@ -307,6 +307,28 @@ function registerRoutes() {
     }
   });
 
+  app.post("/api/users/:id/login", requireAdmin, async (req, res) => {
+    const user = users.find((u) => u.id === req.params.id);
+    if (!user) return res.status(404).json({ error: "Nie ma takiego konta" });
+    const login = String(req.body?.login || "").trim();
+    if (login.length < 3) return res.status(400).json({ error: "Login musi mieć min. 3 znaki" });
+    if (users.some((u) => u.id !== user.id && u.login.toLowerCase() === login.toLowerCase())) {
+      return res.status(400).json({ error: "Konto o tym loginie już istnieje" });
+    }
+    const oldLogin = user.login;
+    user.login = login;
+    try {
+      await persistUsers();
+      // Jeśli admin zmienia własny login — odśwież też sesję
+      if (sessionUser(req).id === user.id) req.session.user.login = login;
+      res.json({ ok: true, login });
+    } catch (e) {
+      user.login = oldLogin;
+      console.error("Błąd zapisu users.json:", e.message);
+      res.status(500).json({ error: "Nie udało się zmienić loginu" });
+    }
+  });
+
   app.post("/api/users/:id/password", requireAdmin, async (req, res) => {
     const user = users.find((u) => u.id === req.params.id);
     if (!user) return res.status(404).json({ error: "Nie ma takiego konta" });
