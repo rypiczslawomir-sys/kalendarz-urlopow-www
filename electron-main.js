@@ -1,3 +1,5 @@
+// Kalendarz urlopowy — © 2026 Sławomir Rypicz. Wszelkie prawa zastrzeżone.
+// Projekt stworzony prywatnie, poza obowiązkami ze stosunku pracy.
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
 

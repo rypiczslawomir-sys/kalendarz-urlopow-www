@@ -1,3 +1,5 @@
+/* Kalendarz urlopowy — © 2026 Sławomir Rypicz. Wszelkie prawa zastrzeżone. */
+
 /* ─── reset / podstawy ──────────────────────────────────────────────── */
 
 *, *::before, *::after {
@@ -3353,6 +3355,56 @@ html[data-theme="dark"] .af-remove:hover {
 
 #absFormAddRowBtn {
     margin-top: 0.1rem;
+}
+
+/* ─── okno: o programie ───────────────────────────────────────────────── */
+
+.about-modal {
+    width: min(420px, 92vw);
+    padding-bottom: 0.4rem;
+}
+
+.about-modal .about-body,
+.about-modal .form-actions {
+    margin-left: 1.1rem;
+    margin-right: 1.1rem;
+}
+
+.about-body {
+    margin-top: 0.6rem;
+    text-align: center;
+}
+
+.about-name {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-strong);
+}
+
+.about-version {
+    margin-top: 0.15rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.about-author {
+    margin-top: 0.7rem;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.about-copy {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.about-note {
+    margin-top: 0.6rem;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--text-muted);
 }
 
 /* ─── stały alert: brak prowadzącego lay-up ───────────────────────────── */

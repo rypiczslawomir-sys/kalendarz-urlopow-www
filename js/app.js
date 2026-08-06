@@ -1,3 +1,5 @@
+// Kalendarz urlopowy — © 2026 Sławomir Rypicz. Wszelkie prawa zastrzeżone.
+// Projekt stworzony prywatnie, poza obowiązkami ze stosunku pracy.
 (function () {
   "use strict";
 
@@ -2695,6 +2697,22 @@
     showToast(msg);
   }
 
+  // ─── okno: o programie ────────────────────────────────────────────────
+  let appVersion = null;
+  async function openAboutModal() {
+    document.getElementById("aboutModal").hidden = false;
+    if (!appVersion) {
+      try {
+        const res = await fetch("/api/version");
+        if (res.ok) appVersion = (await res.json()).version;
+      } catch (e) { /* offline — pokaż bez wersji */ }
+    }
+    document.getElementById("aboutVersion").textContent = appVersion ? `wersja ${appVersion}` : "";
+  }
+  function closeAboutModal() {
+    document.getElementById("aboutModal").hidden = true;
+  }
+
   // ─── panel: suma urlopów w zaznaczone dni ─────────────────────────────
   function renderVacSelection() {
     const body = document.getElementById("vacSelBody");
@@ -3450,6 +3468,14 @@
     document.getElementById("absFormSubmitBtn").addEventListener("click", submitAbsForm);
     document.getElementById("absFormModal").addEventListener("click", (e) => {
       if (e.target === document.getElementById("absFormModal")) closeAbsFormModal();
+    });
+
+    // O programie
+    document.getElementById("aboutBtn").addEventListener("click", openAboutModal);
+    document.getElementById("aboutCloseBtn").addEventListener("click", closeAboutModal);
+    document.getElementById("aboutOkBtn").addEventListener("click", closeAboutModal);
+    document.getElementById("aboutModal").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("aboutModal")) closeAboutModal();
     });
 
     // Export / import

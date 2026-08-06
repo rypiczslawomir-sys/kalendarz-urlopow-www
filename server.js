@@ -1,3 +1,5 @@
+// Kalendarz urlopowy — © 2026 Sławomir Rypicz. Wszelkie prawa zastrzeżone.
+// Projekt stworzony prywatnie, poza obowiązkami ze stosunku pracy.
 require("dotenv").config();
 
 const express = require("express");
@@ -123,6 +125,10 @@ function registerRoutes() {
 
   app.get("/api/me", (req, res) => {
     res.json({ user: req.session.user });
+  });
+
+  app.get("/api/version", (req, res) => {
+    res.json({ version: require("./package.json").version });
   });
 
   app.get("/api/state", async (req, res) => {
