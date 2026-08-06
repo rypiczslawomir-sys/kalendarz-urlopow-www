@@ -2274,6 +2274,289 @@
     });
   }
 
+  // ─── import absencji z raportu Kronos (.xlsx) ─────────────────────────
+  let kronosData = null;        // { people: [...], payCodes: [...] }
+  let kronosMap = {};           // kod płacy -> kod kalendarza ("" = pomiń)
+  const kronosImported = new Set();
+
+  // Normalizacja nazwisk do porównań (bez ogonków, małe litery)
+  function normNamePart(s) {
+    return String(s || "")
+      .toLowerCase()
+      .replace(/[łŁ]/g, "l")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z]/g, "");
+  }
+
+  // Zgadnij kod kalendarza na podstawie kodu płacy Kronos
+  function guessCalendarCode(payCode) {
+    const p = String(payCode || "").toLowerCase();
+    if (p.includes("przepracowane") || p.includes("nadgodzin") || p.includes("holiday indicator")) return "";
+    if (p.includes("zaleg")) return "ZAL";
+    if (p.includes("bież") || p.includes("biez")) return "U";
+    if (p.includes("żąda") || p.includes("zada")) return "UŻ";
+    if (p.includes("siła wyż") || p.includes("sila wyz")) return "SW";
+    if (p.includes("macierzy")) return "M";
+    if (p.includes("choroba") || p.includes("chorob")) return "L";
+    if (p.includes("opiek")) return "OPR";
+    if (p.includes("bezpłat") || p.includes("bezplat")) return "NUN";
+    if (p.includes("krwiod") || p.includes("krew")) return "KREW";
+    if (p.includes("urlop")) return "U";
+    return "";
+  }
+
+  // Parsuje datę w formacie MM/DD/YYYY na klucz YYYY-MM-DD
+  function parseKronosDate(raw) {
+    const m = String(raw || "").trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m) return null;
+    const mm = m[1].padStart(2, "0");
+    const dd = m[2].padStart(2, "0");
+    return `${m[3]}-${mm}-${dd}`;
+  }
+
+  function parseKronosWorkbook(arrayBuffer) {
+    const wb = XLSX.read(arrayBuffer, { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    if (!ws) return null;
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+
+    // Znajdź nagłówek sekcji "Transakcje" (wiersz z ID/Pracown/Data)
+    let headerIdx = -1;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i] || [];
+      if (String(r[0]).trim() === "ID" && String(r[1] || "").startsWith("Pracown") && String(r[2] || "").startsWith("Data")) {
+        headerIdx = i;
+        break;
+      }
+    }
+    if (headerIdx < 0) return null;
+
+    const peopleMap = new Map(); // id -> { id, rawName, last, first, txns: [] }
+    const payCodesSet = new Set();
+
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const r = rows[i] || [];
+      const first = String(r[0] || "").trim();
+      if (!first) continue;
+      if (first === "Sumy" || first === "Kwoty podsumowania") break;
+      // wiersz transakcji: [ID, "Nazwisko, Imię", MM/DD/RRRR, dzień, kod płacy, kwota, godziny, ...]
+      const id = first.replace(/\D/g, "");
+      const rawName = String(r[1] || "").trim();
+      const key = parseKronosDate(r[2]);
+      const payCode = String(r[4] || "").trim();
+      const hours = parseFloat(String(r[6] || "").replace(",", "."));
+      if (!id || !rawName || !key || !payCode || !isFinite(hours) || hours <= 0) continue;
+
+      payCodesSet.add(payCode);
+      if (!peopleMap.has(id)) {
+        const parts = rawName.split(",");
+        peopleMap.set(id, {
+          id,
+          rawName,
+          last: (parts[0] || "").trim(),
+          first: (parts[1] || "").trim().split(/\s+/)[0] || "",
+          txns: [],
+        });
+      }
+      peopleMap.get(id).txns.push({ key, payCode, hours });
+    }
+
+    const people = [...peopleMap.values()].sort((a, b) => a.rawName.localeCompare(b.rawName, "pl"));
+    return { people, payCodes: [...payCodesSet].sort() };
+  }
+
+  // Dopasuj osobę z raportu do pracownika kalendarza: najpierw AIN, potem nazwisko
+  function matchKronosPerson(p) {
+    const byAin = state.employees.find((e) => normalizeAin(e.ain) && normalizeAin(e.ain) === p.id);
+    if (byAin) return byAin;
+    const ln = normNamePart(p.last);
+    const fn = normNamePart(p.first);
+    return state.employees.find(
+      (e) => normNamePart(e.lastName) === ln && normNamePart(e.firstName) === fn
+    ) || null;
+  }
+
+  function openKronosModal() {
+    kronosData = null;
+    kronosMap = {};
+    kronosImported.clear();
+    document.getElementById("kronosFile").value = "";
+    document.getElementById("kronosInfo").textContent = "Wybierz plik raportu, aby zobaczyć pracowników i ich absencje.";
+    document.getElementById("kronosMapWrap").innerHTML = "";
+    document.getElementById("kronosEmpList").innerHTML = "";
+    document.getElementById("kronosModal").hidden = false;
+  }
+
+  function closeKronosModal() {
+    document.getElementById("kronosModal").hidden = true;
+  }
+
+  async function handleKronosFile(file) {
+    if (!file) return;
+    const info = document.getElementById("kronosInfo");
+    try {
+      if (typeof XLSX === "undefined") throw new Error("Brak biblioteki XLSX");
+      const buf = await file.arrayBuffer();
+      const parsed = parseKronosWorkbook(buf);
+      if (!parsed || !parsed.people.length) {
+        info.textContent = "⚠ Nie znaleziono sekcji „Transakcje” w tym pliku. Upewnij się, że to raport „Transakcje i sumy pracownika”.";
+        document.getElementById("kronosMapWrap").innerHTML = "";
+        document.getElementById("kronosEmpList").innerHTML = "";
+        return;
+      }
+      kronosData = parsed;
+      kronosMap = {};
+      for (const pc of parsed.payCodes) kronosMap[pc] = guessCalendarCode(pc);
+      kronosImported.clear();
+      const txnCount = parsed.people.reduce((s, p) => s + p.txns.length, 0);
+      info.textContent = `Znaleziono ${parsed.people.length} pracowników i ${txnCount} wpisów. Sprawdź mapowanie kodów, potem importuj wybrane osoby.`;
+      renderKronosMap();
+      renderKronosEmpList();
+    } catch (e) {
+      console.warn("Błąd odczytu raportu Kronos:", e);
+      info.textContent = "⚠ Nie udało się odczytać pliku: " + e.message;
+    }
+  }
+
+  function renderKronosMap() {
+    const wrap = document.getElementById("kronosMapWrap");
+    if (!kronosData) { wrap.innerHTML = ""; return; }
+    const opts = (sel) => `<option value=""${sel === "" ? " selected" : ""}>— pomiń —</option>` +
+      CODES.map((c) => `<option value="${c.code}"${sel === c.code ? " selected" : ""}>${c.code} — ${c.label}</option>`).join("");
+    const rows = kronosData.payCodes.map((pc, i) => `
+      <div class="kr-map-row">
+        <span class="kr-map-name" title="${escapeHtml(pc)}">${escapeHtml(pc)}</span>
+        <select class="kr-map-sel" data-pc-idx="${i}">${opts(kronosMap[pc] ?? "")}</select>
+      </div>`).join("");
+    wrap.innerHTML = `<div class="kr-section-title">Mapowanie kodów płacy → kody kalendarza</div>${rows}`;
+    wrap.querySelectorAll(".kr-map-sel").forEach((sel) => {
+      sel.addEventListener("change", () => {
+        const pc = kronosData.payCodes[parseInt(sel.dataset.pcIdx, 10)];
+        kronosMap[pc] = sel.value;
+        renderKronosEmpList();
+      });
+    });
+  }
+
+  // Zbierz wpisy osoby wg zmapowanych kodów: klucz daty -> { code, hours }
+  function collectKronosEntries(p) {
+    const perDate = new Map();
+    for (const t of p.txns) {
+      const code = kronosMap[t.payCode];
+      if (!code) continue;
+      const list = perDate.get(t.key) || [];
+      list.push({ code, hours: t.hours });
+      perDate.set(t.key, list);
+    }
+    const out = new Map();
+    for (const [key, list] of perDate) {
+      const byCode = new Map();
+      for (const e of list) byCode.set(e.code, (byCode.get(e.code) || 0) + e.hours);
+      // przy kilku kodach tego samego dnia wybierz ten z większą liczbą godzin
+      let best = null;
+      for (const [code, hours] of byCode) {
+        if (!best || hours > best.hours) best = { code, hours };
+      }
+      if (best && best.hours > 0) {
+        out.set(key, { code: best.code, hours: Math.min(8, Math.round(best.hours * 100) / 100) });
+      }
+    }
+    return out;
+  }
+
+  function kronosEntriesSummary(entries) {
+    const cnt = new Map();
+    for (const { code } of entries.values()) cnt.set(code, (cnt.get(code) || 0) + 1);
+    return CODES.filter((c) => cnt.has(c.code))
+      .map((c) => `<span class="wh-chip" data-code="${c.code}" title="${c.label}">${c.code}</span> ${cnt.get(c.code)} dn.`)
+      .join(" · ");
+  }
+
+  function renderKronosEmpList() {
+    const wrap = document.getElementById("kronosEmpList");
+    if (!kronosData) { wrap.innerHTML = ""; return; }
+
+    const empOptions = (selId) => `<option value="">— nie importuj / brak w kalendarzu —</option>` +
+      state.employees.map((e) => `<option value="${e.id}"${e.id === selId ? " selected" : ""}>${escapeHtml(getDisplayName(e))}</option>`).join("");
+
+    const rows = kronosData.people.map((p, i) => {
+      const entries = collectKronosEntries(p);
+      const matched = matchKronosPerson(p);
+      const done = kronosImported.has(p.id);
+      const summary = entries.size
+        ? kronosEntriesSummary(entries)
+        : `<span class="kr-none">brak absencji po zmapowaniu</span>`;
+      const matchBadge = matched
+        ? (normalizeAin(matched.ain) === p.id
+            ? `<span class="kr-badge kr-badge-ain" title="Dopasowano po numerze AIN">AIN ✓</span>`
+            : `<span class="kr-badge kr-badge-name" title="Dopasowano po nazwisku">nazwisko ✓</span>`)
+        : `<span class="kr-badge kr-badge-no" title="Nie znaleziono w kalendarzu — wybierz ręcznie">brak dopasowania</span>`;
+      return `
+        <div class="kr-emp-row${done ? " kr-done" : ""}" data-pid="${p.id}">
+          <div class="kr-emp-main">
+            <div class="kr-emp-name">${escapeHtml(p.rawName)} <span class="kr-emp-id">(${p.id})</span> ${matchBadge}</div>
+            <div class="kr-emp-summary">${summary}</div>
+          </div>
+          <div class="kr-emp-actions">
+            <select class="kr-emp-sel" data-p-idx="${i}">${empOptions(matched ? matched.id : "")}</select>
+            <button type="button" class="btn btn-primary btn-sm kr-import-btn" data-p-idx="${i}"${entries.size && !done ? "" : " disabled"}>${done ? "✓ Zaimportowano" : "Importuj"}</button>
+          </div>
+        </div>`;
+    }).join("");
+
+    wrap.innerHTML = `<div class="kr-section-title">Pracownicy z raportu — importuj pojedynczo</div><div class="kr-emp-list">${rows}</div>`;
+
+    wrap.querySelectorAll(".kr-import-btn").forEach((btn) => {
+      btn.addEventListener("click", () => importKronosPerson(parseInt(btn.dataset.pIdx, 10)));
+    });
+  }
+
+  function importKronosPerson(idx) {
+    const p = kronosData?.people?.[idx];
+    if (!p) return;
+    const row = document.querySelector(`.kr-emp-row[data-pid="${p.id}"]`);
+    const sel = row ? row.querySelector(".kr-emp-sel") : null;
+    const empId = sel ? sel.value : "";
+    if (!empId) { showToast("Wybierz pracownika z kalendarza, do którego zaciągnąć absencje"); return; }
+    const emp = state.employees.find((e) => e.id === empId);
+    if (!emp) return;
+
+    const entries = collectKronosEntries(p);
+    if (!entries.size) { showToast("Brak absencji do importu (sprawdź mapowanie kodów)"); return; }
+
+    const holMaps = {};
+    const holFor = (year) => (holMaps[year] = holMaps[year] || H.holidayMap(year));
+
+    let added = 0, changed = 0, same = 0, skippedFree = 0, outsideYear = 0;
+    for (const [key, e] of entries) {
+      const d = parseDateKey(key);
+      if (!d) continue;
+      if (H.isWeekend(d) || holFor(d.getFullYear()).has(key)) { skippedFree++; continue; }
+      const newVal = makeValue(e.code, e.hours >= 8 ? 8 : e.hours);
+      const oldVal = emp.days[key];
+      if (oldVal && valuesEqual(oldVal, newVal)) { same++; continue; }
+      if (oldVal) changed++; else added++;
+      emp.days[key] = newVal;
+      if (!key.startsWith(state.year + "-")) outsideYear++;
+    }
+
+    // Uzupełnij AIN z raportu, jeśli pracownik go nie miał
+    if (!normalizeAin(emp.ain) && p.id.length === 9) emp.ain = p.id;
+
+    kronosImported.add(p.id);
+    saveState();
+    renderAll();
+    renderKronosEmpList();
+
+    let msg = `${getDisplayName(emp)}: dodano ${added}`;
+    if (changed) msg += `, nadpisano ${changed}`;
+    if (same) msg += `, bez zmian ${same}`;
+    if (skippedFree) msg += `, pominięto ${skippedFree} (weekend/święto)`;
+    if (outsideYear) msg += `, ${outsideYear} poza rokiem ${state.year}`;
+    showToast(msg);
+  }
+
   // ─── panel: suma urlopów w zaznaczone dni ─────────────────────────────
   function renderVacSelection() {
     const body = document.getElementById("vacSelBody");
@@ -2999,6 +3282,17 @@
         const blob = new Blob([JSON.stringify(state)], { type: "application/json" });
         navigator.sendBeacon("/api/state", blob);
       } catch (e) { /* best effort */ }
+    });
+
+    // Import absencji z Kronos
+    document.getElementById("kronosBtn").addEventListener("click", openKronosModal);
+    document.getElementById("kronosModalCloseBtn").addEventListener("click", closeKronosModal);
+    document.getElementById("kronosCloseBtn2").addEventListener("click", closeKronosModal);
+    document.getElementById("kronosModal").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("kronosModal")) closeKronosModal();
+    });
+    document.getElementById("kronosFile").addEventListener("change", (e) => {
+      handleKronosFile(e.target.files && e.target.files[0]);
     });
 
     // Export / import

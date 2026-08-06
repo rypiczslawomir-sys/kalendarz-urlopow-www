@@ -3113,6 +3113,145 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
 .wh-chip[data-code="ZM"]  { background: var(--code-ZM);  color: #fdf4ff; }
 .wh-chip[data-code="L"]   { background: var(--code-L);   color: #2a0707; }
 
+/* ─── modal importu z Kronos ──────────────────────────────────────────── */
+
+.kronos-modal {
+    width: min(760px, 94vw);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    padding-bottom: 0.4rem;
+}
+
+.kronos-modal .form-row,
+.kronos-modal .kr-info,
+.kronos-modal #kronosMapWrap,
+.kronos-modal #kronosEmpList,
+.kronos-modal .form-actions {
+    margin-left: 1.1rem;
+    margin-right: 1.1rem;
+}
+
+.kr-info {
+    margin-top: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.kr-section-title {
+    margin: 0.8rem 0 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+}
+
+.kr-map-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.18rem 0;
+    font-size: 0.82rem;
+}
+
+.kr-map-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-strong);
+}
+
+.kr-map-sel,
+.kr-emp-sel {
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.25rem 0.4rem;
+    color: var(--text-strong);
+    font-size: 0.78rem;
+    outline: none;
+    cursor: pointer;
+    max-width: 260px;
+}
+
+.kr-emp-list {
+    max-height: 38vh;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.kr-emp-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.kr-emp-row:last-child {
+    border-bottom: none;
+}
+
+.kr-emp-row.kr-done {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.kr-emp-main {
+    min-width: 0;
+}
+
+.kr-emp-name {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text-strong);
+}
+
+.kr-emp-id {
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 0.76rem;
+}
+
+.kr-emp-summary {
+    margin-top: 2px;
+    font-size: 0.78rem;
+    color: var(--text);
+}
+
+.kr-none {
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+.kr-emp-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex: none;
+}
+
+.kr-badge {
+    display: inline-block;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+.kr-badge-ain  { background: #dcfce7; color: #166534; }
+.kr-badge-name { background: #dbeafe; color: #1d4ed8; }
+.kr-badge-no   { background: #fee2e2; color: #991b1b; }
+
+html[data-theme="dark"] .kr-badge-ain  { background: #113322; color: #86efac; }
+html[data-theme="dark"] .kr-badge-name { background: #172a54; color: #93c5fd; }
+html[data-theme="dark"] .kr-badge-no   { background: #481414; color: #fca5a5; }
+
 /* ─── stały alert: brak prowadzącego lay-up ───────────────────────────── */
 
 .prow-alert-bar {
