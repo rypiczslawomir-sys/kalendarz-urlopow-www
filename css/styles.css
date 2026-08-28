@@ -3266,6 +3266,105 @@ html[data-theme="dark"] .kr-badge-ain  { background: #113322; color: #86efac; }
 html[data-theme="dark"] .kr-badge-name { background: #172a54; color: #93c5fd; }
 html[data-theme="dark"] .kr-badge-no   { background: #481414; color: #fca5a5; }
 
+#kronosConflictModal {
+    z-index: 360;
+}
+
+.kronos-conflict-modal {
+    width: min(640px, 94vw);
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.kronos-conflict-modal .kr-conf-body,
+.kronos-conflict-modal .form-actions {
+    margin-left: 1.1rem;
+    margin-right: 1.1rem;
+}
+
+.kr-conf-body {
+    overflow: auto;
+    max-height: 58vh;
+    padding-bottom: 0.4rem;
+}
+
+.kr-conf-lead {
+    margin-top: 0.45rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: var(--text);
+}
+
+.kr-conf-sum {
+    margin: 0.55rem 0 0.7rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.kr-conf-block {
+    margin-bottom: 0.75rem;
+}
+
+.kr-conf-emp {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-strong);
+    margin-bottom: 0.3rem;
+}
+
+.kr-conf-meta {
+    font-weight: 500;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    margin-left: 0.4rem;
+}
+
+.kr-conf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.kr-conf-table th {
+    text-align: left;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    padding: 0.2rem 0.35rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.kr-conf-table td {
+    padding: 0.28rem 0.35rem;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: middle;
+}
+
+.kr-conf-date {
+    white-space: nowrap;
+    color: var(--text-strong);
+}
+
+.kr-conf-arrow {
+    color: var(--text-dim);
+    width: 1.4rem;
+    text-align: center;
+}
+
+.kr-conf-clean {
+    margin-top: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.kr-conf-actions {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
 /* ─── formularz: ręczne wpisywanie absencji ───────────────────────────── */
 
 .abs-form-modal {

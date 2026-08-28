@@ -288,6 +288,21 @@
         </div>
     </div>
 
+    <div class="modal-backdrop" id="kronosConflictModal" hidden>
+        <div class="modal kronos-conflict-modal" role="dialog" aria-labelledby="kronosConflictTitle">
+            <div class="modal-header">
+                <h2 id="kronosConflictTitle">⚠ Nakładające się absencje</h2>
+                <button class="modal-close" id="kronosConflictCloseBtn" title="Zamknij">×</button>
+            </div>
+            <div class="kr-conf-body" id="kronosConflictBody"></div>
+            <div class="form-actions kr-conf-actions">
+                <button type="button" class="btn btn-ghost" id="kronosConflictCancelBtn">Anuluj import</button>
+                <button type="button" class="btn btn-ghost" id="kronosConflictKeepBtn" title="Nowe dni zostaną dodane, istniejące wpisy zostaną bez zmian">Zachowaj istniejące</button>
+                <button type="button" class="btn btn-danger" id="kronosConflictOverwriteBtn" title="Podmieni kolidujące dni na dane z Kronos">Nadpisz z Kronos</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-backdrop" id="absFormModal" hidden>
         <div class="modal abs-form-modal" role="dialog" aria-labelledby="absFormModalTitle">
             <div class="modal-header">
