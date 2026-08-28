@@ -3595,6 +3595,50 @@ html[data-theme="dark"] .acc-badge-admin { background: #453306; color: #fcd34d; 
 
 /* ─── okno: o programie ───────────────────────────────────────────────── */
 
+.help-modal {
+    width: min(680px, 94vw);
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-bottom: 0.4rem;
+}
+
+.help-modal .help-body,
+.help-modal .form-actions {
+    margin-left: 1.1rem;
+    margin-right: 1.1rem;
+}
+
+.help-body {
+    overflow: auto;
+    max-height: 64vh;
+    padding-bottom: 0.6rem;
+    font-size: 0.84rem;
+    line-height: 1.45;
+    color: var(--text);
+}
+
+.help-intro {
+    margin: 0.5rem 0 0.8rem;
+    color: var(--text-muted);
+}
+
+.help-body h3 {
+    margin: 0.9rem 0 0.25rem;
+    font-size: 0.86rem;
+    color: var(--text-strong);
+}
+
+.help-body ul {
+    margin: 0;
+    padding-left: 1.15rem;
+}
+
+.help-body li {
+    margin: 0.18rem 0;
+}
+
 .about-modal {
     width: min(420px, 92vw);
     padding-bottom: 0.4rem;

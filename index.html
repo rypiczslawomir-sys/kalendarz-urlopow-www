@@ -65,6 +65,8 @@
 
             <button class="btn btn-ghost" id="passwordBtn" title="Zmień swoje hasło" hidden>🔑</button>
 
+            <button class="btn btn-ghost" id="helpBtn" title="Instrukcja obsługi">❓ Pomoc</button>
+
             <button class="btn btn-ghost" id="aboutBtn" title="O programie">ⓘ</button>
 
             <button class="btn btn-ghost" id="logoutBtn" title="Wyloguj">Wyloguj</button>
@@ -359,6 +361,80 @@
             <div class="form-actions">
                 <button type="button" class="btn btn-ghost" id="passwordCancelBtn">Anuluj</button>
                 <button type="button" class="btn btn-primary" id="passwordSubmitBtn">Zmień hasło</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="helpModal" hidden>
+        <div class="modal help-modal" role="dialog" aria-labelledby="helpModalTitle">
+            <div class="modal-header">
+                <h2 id="helpModalTitle">❓ Instrukcja obsługi</h2>
+                <button class="modal-close" id="helpCloseBtn" title="Zamknij">×</button>
+            </div>
+            <div class="help-body">
+                <p class="help-intro">Kalendarz urlopowy służy do planowania urlopów i absencji zespołu. Każdy użytkownik ma własny kalendarz — nikt inny go nie widzi.</p>
+
+                <h3>1. Logowanie i hasło</h3>
+                <ul>
+                    <li>Zaloguj się loginem i hasłem, które dostałeś od administratora.</li>
+                    <li>Hasło zmienisz przyciskiem 🔑 w górnym pasku (podajesz stare i nowe, min. 6 znaków).</li>
+                    <li>Jeśli zapomnisz hasła — poproś administratora o reset.</li>
+                </ul>
+
+                <h3>2. Pracownicy</h3>
+                <ul>
+                    <li><b>+ Dodaj pracownika</b> — nazwisko, imię oraz opcjonalnie nr AIN (9 cyfr). AIN pomaga dopasować osobę przy imporcie z Kronos.</li>
+                    <li>Przy edycji zaznaczysz szkolenia, funkcje (np. Prowadzenie lay-up) i możesz wyłączyć osobę ze statystyk absencji działu (np. kierownik).</li>
+                    <li>Kolejność na liście zmienisz przeciągając wiersz.</li>
+                </ul>
+
+                <h3>3. Wpisanie absencji w kalendarzu</h3>
+                <ul>
+                    <li>Na górze wybierz kod (np. <b>U</b> wypoczynkowy, <b>UŻ</b> na żądanie, <b>L</b> L4). Przy kodach godzinowych ustaw liczbę godzin.</li>
+                    <li>Kliknij dzień w wierszu pracownika — wpis się pojawi. Ponowne kliknięcie tym samym kodem czyści komórkę.</li>
+                    <li>Weekendy i święta są zablokowane.</li>
+                    <li>Kolumny po lewej pokazują wykorzystanie puli, np. <b>(5/26)</b>. Urlop na żądanie (UŻ) schodzi też z puli urlopu wypoczynkowego (U).</li>
+                    <li>Pule (suwaki) ustawiasz przy pracowniku — ile dni/godzin ma do wykorzystania.</li>
+                </ul>
+
+                <h3>4. Szybkie wpisanie zakresu dat</h3>
+                <ul>
+                    <li>Przycisk <b>📝 Wpisz absencje</b>: wybierz pracownika, rodzaj i daty od–do. Możesz dodać kilka zakresów na raz.</li>
+                    <li>Weekendy i święta program pominie sam.</li>
+                </ul>
+
+                <h3>5. Import z Kronos</h3>
+                <ul>
+                    <li>Przycisk <b>📥 Kronos</b> → wybierz plik raportu „Transakcje i sumy pracownika” (.xlsx).</li>
+                    <li>Sprawdź mapowanie kodów płacy na kody kalendarza, potem importuj osobę albo <b>wszystkie dopasowane</b>.</li>
+                    <li>Program szuka pracownika po AIN, a jeśli go nie ma — po nazwisku.</li>
+                    <li>Gdy w kalendarzu jest już inna absencja w tym samym dniu, zobaczysz porównanie i zdecydujesz: zachować swoje wpisy albo nadpisać danymi z Kronos.</li>
+                </ul>
+
+                <h3>6. Widok i okienka</h3>
+                <ul>
+                    <li>Możesz pokazać cały rok, jeden miesiąc albo zakres tygodni.</li>
+                    <li>Kliknięcie daty w nagłówku zaznacza dzień (Ctrl+klik — kilka dni). Wtedy okienka pokażą obsadę, udział funkcji i sumę urlopów.</li>
+                    <li>Okienka startują zwinięte — rozwiniesz je plusem. Można je przesuwać za pasek tytułu i zmieniać rozmiar. Dwuklik w tytuł resetuje położenie.</li>
+                    <li>Czerwony pasek u góry pojawia się, gdy w dniu roboczym nikt z funkcją „Prowadzenie lay-up” nie jest obecny.</li>
+                </ul>
+
+                <h3>7. Wydruk, eksport, motyw</h3>
+                <ul>
+                    <li><b>🖨 Drukuj</b> — roczny kalendarz wybranego pracownika (urlopy + podsumowanie puli).</li>
+                    <li><b>Eksport / Import</b> — kopia zapasowa całego kalendarza do pliku .json (ostrożnie: import zastępuje dane).</li>
+                    <li>🌙 / ☀️ przełącza jasny i ciemny motyw.</li>
+                    <li>W nagłówku widać status zapisu. Nie zamykaj programu, gdy świeci się „niezapisane”.</li>
+                </ul>
+
+                <h3>8. Dla administratora</h3>
+                <ul>
+                    <li>Przycisk <b>👥 Konta</b>: dodawanie użytkowników, zmiana loginu i hasła, usuwanie konta.</li>
+                    <li>Administrator nie widzi cudzych kalendarzy. Może przywrócić kopię zapasową z ostatnich 7 dni (dyskietka przy koncie), gdy ktoś poprosi o odzyskanie danych.</li>
+                </ul>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary" id="helpOkBtn">Rozumiem</button>
             </div>
         </div>
     </div>

@@ -2305,6 +2305,7 @@
   // ─── import absencji z raportu Kronos (.xlsx) ─────────────────────────
   let kronosData = null;        // { people: [...], payCodes: [...] }
   let kronosMap = {};           // kod płacy -> kod kalendarza ("" = pomiń)
+  const kronosImported = new Set();
   let kronosPending = null;     // { previews: [...] }
 
   function formatKronosConflictDate(key) {
@@ -2942,6 +2943,13 @@
   }
   function closeAboutModal() {
     document.getElementById("aboutModal").hidden = true;
+  }
+
+  function openHelpModal() {
+    document.getElementById("helpModal").hidden = false;
+  }
+  function closeHelpModal() {
+    document.getElementById("helpModal").hidden = true;
   }
 
   // ─── konta użytkowników (panel admina + zmiana hasła) ─────────────────
@@ -3838,6 +3846,8 @@
         if (m && !m.hidden) closeEmpModal();
         const pm = document.getElementById("printModal");
         if (pm && !pm.hidden) closePrintModal();
+        const hm = document.getElementById("helpModal");
+        if (hm && !hm.hidden) closeHelpModal();
       }
     });
 
@@ -3962,6 +3972,13 @@
     document.getElementById("aboutOkBtn").addEventListener("click", closeAboutModal);
     document.getElementById("aboutModal").addEventListener("click", (e) => {
       if (e.target === document.getElementById("aboutModal")) closeAboutModal();
+    });
+
+    document.getElementById("helpBtn").addEventListener("click", openHelpModal);
+    document.getElementById("helpCloseBtn").addEventListener("click", closeHelpModal);
+    document.getElementById("helpOkBtn").addEventListener("click", closeHelpModal);
+    document.getElementById("helpModal").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("helpModal")) closeHelpModal();
     });
 
     // Konta użytkowników (admin) + zmiana hasła
