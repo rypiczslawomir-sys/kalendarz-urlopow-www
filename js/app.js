@@ -1877,14 +1877,12 @@
 
     if (!selectedDayKey) {
       body.innerHTML = `<div class="day-stats-empty">Kliknij datę w nagłówku, aby zobaczyć obsadę dnia.</div>`;
-      renderFuncChart(null, null);
       return;
     }
 
     const d = parseDateKey(selectedDayKey);
     if (!d) {
       body.innerHTML = `<div class="day-stats-empty">Nieprawidłowa data.</div>`;
-      renderFuncChart(null, null);
       return;
     }
 
@@ -1965,72 +1963,6 @@
         <span class="day-stats-total-val">
           <span class="present">${stats.totalPresent}</span><span class="sep">/</span><span class="total">${stats.totalEmps}</span>
         </span>
-      </div>
-    `;
-
-    renderFuncChart(stats, d);
-  }
-
-  function renderFuncChart(stats, dateObj) {
-    const body = document.getElementById("funcChartBody");
-    if (!body) return;
-
-    if (!selectedDayKey || !stats || !dateObj) {
-      body.innerHTML = `<div class="day-stats-empty">Kliknij datę w nagłówku, aby zobaczyć wykres.</div>`;
-      return;
-    }
-
-    const slices = [];
-    for (const b of stats.byFunc) {
-      if (b.present > 0) {
-        slices.push({ label: b.func.label, short: b.func.short, color: b.func.color, count: b.present });
-      }
-    }
-    if (stats.unassigned.present > 0) {
-      slices.push({ label: "(bez funkcji)", short: "—", color: "#64748b", count: stats.unassigned.present });
-    }
-
-    const totalPresent = slices.reduce((s, x) => s + x.count, 0);
-    if (totalPresent === 0) {
-      body.innerHTML = `
-        <div class="func-chart-date">${formatPolishDate(dateObj)}</div>
-        <div class="func-chart-empty-pie" title="Brak obecnych"></div>
-        <div class="day-stats-empty">Brak obecnych pracowników w tym dniu.</div>
-      `;
-      return;
-    }
-
-    // Procenty względem sumy przypisań funkcji (obecni)
-    let cumPct = 0;
-    const gradStops = slices.map((s) => {
-      const pct = (s.count / totalPresent) * 100;
-      const start = cumPct;
-      cumPct += pct;
-      s.pct = pct;
-      return `${s.color} ${start.toFixed(2)}% ${cumPct.toFixed(2)}%`;
-    });
-
-    const legend = slices.map((s) => `
-      <div class="chart-legend-row">
-        <span class="chart-legend-dot" style="background:${s.color}"></span>
-        <span class="chart-legend-name">${s.label}</span>
-        <span class="chart-legend-val">
-          <strong>${s.count}</strong>
-          <span class="chart-legend-pct">${s.pct.toFixed(1).replace(".", ",")}%</span>
-        </span>
-      </div>
-    `).join("");
-
-    body.innerHTML = `
-      <div class="func-chart-date">${formatPolishDate(dateObj)}</div>
-      <div class="func-chart-wrap">
-        <div class="func-chart-pie" style="background:conic-gradient(from -90deg, ${gradStops.join(", ")})" title="Obecni wg funkcji">
-          <div class="func-chart-hole">
-            <span class="func-chart-hole-num">${totalPresent}</span>
-            <span class="func-chart-hole-lbl">obecnych</span>
-          </div>
-        </div>
-        <div class="func-chart-legend">${legend}</div>
       </div>
     `;
   }
@@ -3885,12 +3817,6 @@
       document.getElementById("dayStatsToggleBtn").textContent = collapsed ? "+" : "−";
     });
 
-    const funcChartPanel = document.getElementById("funcChartPanel");
-    document.getElementById("funcChartToggleBtn").addEventListener("click", () => {
-      const collapsed = funcChartPanel.classList.toggle("collapsed");
-      document.getElementById("funcChartToggleBtn").textContent = collapsed ? "+" : "−";
-    });
-
     const trainingStatsPanel = document.getElementById("trainingStatsPanel");
     document.getElementById("trainingStatsToggleBtn").addEventListener("click", () => {
       const collapsed = trainingStatsPanel.classList.toggle("collapsed");
@@ -3911,7 +3837,7 @@
 
     // Pływające okienka: przesuwanie za nagłówek + regulacja wielkości
     // (pozycja i rozmiar zapamiętywane na urządzeniu)
-    ["dayStats", "funcChartPanel", "trainingStatsPanel", "vacSelPanel", "weekHoursPanel"]
+    ["dayStats", "trainingStatsPanel", "vacSelPanel", "weekHoursPanel"]
       .forEach((id) => { makePanelDraggable(id); makePanelResizable(id); });
 
     // Motyw jasny/ciemny — zapamiętywany na tym urządzeniu
