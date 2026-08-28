@@ -7,7 +7,7 @@
 
   // ─── konfiguracja ─────────────────────────────────────────────────────
   const STORAGE_KEY = "kalendarz-urlopow-v1";
-  const STATE_VERSION = 9;
+  const STATE_VERSION = 10;
   const YEAR_MIN = 2024;
   const YEAR_MAX = 2060;
 
@@ -137,6 +137,7 @@
     if ("dept" in emp) delete emp.dept;
     emp.ain = normalizeAin(emp.ain);
     emp.absExcluded = Boolean(emp.absExcluded);
+    emp.agency = Boolean(emp.agency);
   }
 
   const POLISH_MONTHS = [
@@ -460,6 +461,14 @@
       }
       s.version = 9;
     }
+
+    // v9 → v10: flaga pracownika agencyjnego
+    if (s.version === 9) {
+      for (const emp of s.employees || []) {
+        emp.agency = Boolean(emp.agency);
+      }
+      s.version = 10;
+    }
   }
 
   // ─── helpery: wartość komórki (string lub obiekt {code, h}) ───────────
@@ -574,6 +583,7 @@
       firstName: opts.firstName || "",
       ain:       normalizeAin(opts.ain),
       absExcluded: Boolean(opts.absExcluded),
+      agency: Boolean(opts.agency),
       funcs:     Array.isArray(opts.funcs) ? opts.funcs.slice() : [],
       trainings: normalizeTrainingList(opts.trainings, ""),
       pools,
@@ -616,6 +626,9 @@
     const ainRow = ain
       ? `<div class="emp-info-ain"><span class="emp-info-ain-label">Nr AIN</span><span class="emp-info-ain-value">${escapeHtml(ain)}</span></div>`
       : "";
+    const agencyRow = emp.agency
+      ? `<div class="emp-info-agency">Pracownik agencyjny</div>`
+      : "";
 
     let funcRows = "";
     if (funcs.length === 0) {
@@ -647,6 +660,7 @@
     pop.innerHTML = `
       <div class="emp-info-title">${escapeHtml(name)}</div>
       ${ainRow}
+      ${agencyRow}
       <div class="emp-info-grid">
         <div class="emp-info-section">
           <div class="emp-info-section-title">Obszary pracy</div>
@@ -1137,6 +1151,7 @@
       trF.dataset.empId = emp.id;
       trS.dataset.empId = emp.id;
       if (emp.absExcluded) trF.classList.add("emp-excluded");
+      if (emp.agency) trF.classList.add("emp-agency");
       linkRowHover(trF, trS);
 
       const tdLp = document.createElement("td");
@@ -1159,7 +1174,9 @@
 
       const tdName = document.createElement("td");
       tdName.className = "cell-name col-name";
-      tdName.title = "Najedź — obszary i szkolenia. Kliknij — edycja.";
+      tdName.title = emp.agency
+        ? "Pracownik agencyjny. Najedź — obszary i szkolenia. Kliknij — edycja."
+        : "Najedź — obszary i szkolenia. Kliknij — edycja.";
       const nameWrap = document.createElement("div");
       nameWrap.className = "name-wrap";
       const nameMain = document.createElement("div");
@@ -1726,6 +1743,7 @@
       fnInput.value = emp.firstName || "";
       ainInput.value = normalizeAin(emp.ain);
       document.getElementById("empAbsExcluded").checked = Boolean(emp.absExcluded);
+      document.getElementById("empAgency").checked = Boolean(emp.agency);
       populateTrainDeptSelect();
       setModalTrainings(emp.trainings);
       buildFuncCheckboxes(Array.isArray(emp.funcs) ? emp.funcs : []);
@@ -1736,6 +1754,7 @@
       fnInput.value = "";
       ainInput.value = "";
       document.getElementById("empAbsExcluded").checked = false;
+      document.getElementById("empAgency").checked = false;
       populateTrainDeptSelect();
       setModalTrainings([]);
       buildFuncCheckboxes([]);
@@ -1764,6 +1783,7 @@
     const trainings = empModalTrainings.slice();
     const funcs     = readSelectedFuncs();
     const absExcluded = document.getElementById("empAbsExcluded").checked;
+    const agency = document.getElementById("empAgency").checked;
 
     if (!lastName)  { lnInput.focus(); showToast("Nazwisko jest wymagane"); return; }
     if (!firstName) { fnInput.focus(); showToast("Imię jest wymagane");    return; }
@@ -1782,13 +1802,14 @@
         emp.trainings = trainings;
         emp.funcs     = funcs;
         emp.absExcluded = absExcluded;
+        emp.agency = agency;
       }
       saveState();
       closeEmpModal();
       renderAll();
       showToast("Zapisano zmiany");
     } else {
-      state.employees.push(makeEmployee({ lastName, firstName, ain, trainings, funcs, absExcluded }));
+      state.employees.push(makeEmployee({ lastName, firstName, ain, trainings, funcs, absExcluded, agency }));
       saveState();
       closeEmpModal();
       renderAll();

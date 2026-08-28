@@ -172,6 +172,25 @@ html[data-theme="dark"] .kalendarz-frozen tr.emp-excluded:hover .cell-name,
 html[data-theme="dark"] .kalendarz-frozen tr.emp-excluded.row-sync-hover .cell-name {
     background: #2d2151 !important;
 }
+html[data-theme="dark"] .kalendarz-frozen tr.emp-agency .cell-name {
+    background: #3a242c !important;
+}
+html[data-theme="dark"] .kalendarz-frozen tr.emp-agency:hover .cell-name,
+html[data-theme="dark"] .kalendarz-frozen tr.emp-agency.row-sync-hover .cell-name {
+    background: #472d36 !important;
+}
+html[data-theme="dark"] .kalendarz-frozen tr.emp-excluded.emp-agency .cell-name {
+    background: #3a242c !important;
+    box-shadow: inset 3px 0 0 #7c5cd6;
+}
+html[data-theme="dark"] .kalendarz-frozen tr.emp-excluded.emp-agency:hover .cell-name,
+html[data-theme="dark"] .kalendarz-frozen tr.emp-excluded.emp-agency.row-sync-hover .cell-name {
+    background: #472d36 !important;
+}
+html[data-theme="dark"] .emp-info-agency {
+    color: #fecdd3;
+    background: #3a242c;
+}
 html[data-theme="dark"] .btn-danger {
     background: #481414;
     color: #fca5a5;
@@ -1481,6 +1500,25 @@ tr:hover .cell-zm[data-code] {
     background: #ede9fe !important;
 }
 
+.kalendarz-frozen tr.emp-agency .cell-name {
+    background: #fdf2f4 !important;
+}
+
+.kalendarz-frozen tr.emp-agency:hover .cell-name,
+.kalendarz-frozen tr.emp-agency.row-sync-hover .cell-name {
+    background: #fce7eb !important;
+}
+
+.kalendarz-frozen tr.emp-excluded.emp-agency .cell-name {
+    background: #fdf2f4 !important;
+    box-shadow: inset 3px 0 0 #a78bfa;
+}
+
+.kalendarz-frozen tr.emp-excluded.emp-agency:hover .cell-name,
+.kalendarz-frozen tr.emp-excluded.emp-agency.row-sync-hover .cell-name {
+    background: #fce7eb !important;
+}
+
 .cell-actions {
     display: flex;
     align-items: center;
@@ -1766,6 +1804,18 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     font-weight: 600;
     letter-spacing: 0.08em;
     color: var(--text-strong);
+}
+
+.emp-info-agency {
+    display: inline-block;
+    margin-top: 0.2rem;
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #9f1239;
+    background: #fdf2f4;
 }
 
 .emp-info-grid {
