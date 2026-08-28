@@ -2438,7 +2438,7 @@
       for (const pc of parsed.payCodes) kronosMap[pc] = guessCalendarCode(pc);
       kronosImported.clear();
       const txnCount = parsed.people.reduce((s, p) => s + p.txns.length, 0);
-      info.textContent = `Znaleziono ${parsed.people.length} pracowników i ${txnCount} wpisów. Sprawdź mapowanie kodów, potem importuj wybrane osoby.`;
+      info.textContent = `Znaleziono ${parsed.people.length} pracowników i ${txnCount} wpisów. Sprawdź mapowanie kodów, potem importuj pojedynczo albo wszystkie dopasowane osoby naraz.`;
       renderKronosMap();
       renderKronosEmpList();
     } catch (e) {
@@ -2501,9 +2501,52 @@
       .join(" · ");
   }
 
-  function renderKronosEmpList() {
+  function kronosSelectedEmpId(idx) {
+    const p = kronosData?.people?.[idx];
+    if (!p) return "";
+    const row = document.querySelector(`.kr-emp-row[data-pid="${p.id}"]`);
+    const sel = row ? row.querySelector(".kr-emp-sel") : null;
+    if (sel) return sel.value;
+    const matched = matchKronosPerson(p);
+    return matched ? matched.id : "";
+  }
+
+  function kronosMatchedImportable() {
+    if (!kronosData) return [];
+    const out = [];
+    for (let i = 0; i < kronosData.people.length; i++) {
+      const p = kronosData.people[i];
+      if (kronosImported.has(p.id)) continue;
+      if (!matchKronosPerson(p)) continue;
+      if (!collectKronosEntries(p).size) continue;
+      if (!kronosSelectedEmpId(i)) continue;
+      out.push(i);
+    }
+    return out;
+  }
+
+  function kronosScrollSnapshot() {
+    const wrap = document.getElementById("kronosEmpList");
+    const list = wrap && wrap.querySelector(".kr-emp-list");
+    const modal = wrap && wrap.closest(".kronos-modal");
+    return {
+      listScroll: list ? list.scrollTop : 0,
+      modalScroll: modal ? modal.scrollTop : 0,
+    };
+  }
+
+  function renderKronosEmpList(scroll) {
     const wrap = document.getElementById("kronosEmpList");
     if (!kronosData) { wrap.innerHTML = ""; return; }
+
+    const prevList = wrap.querySelector(".kr-emp-list");
+    const modal = wrap.closest(".kronos-modal");
+    const prevScroll = scroll && scroll.listScroll != null ? scroll.listScroll : (prevList ? prevList.scrollTop : 0);
+    const prevModalScroll = scroll && scroll.modalScroll != null ? scroll.modalScroll : (modal ? modal.scrollTop : 0);
+    const prevSels = {};
+    wrap.querySelectorAll(".kr-emp-sel").forEach((sel) => {
+      prevSels[sel.dataset.pIdx] = sel.value;
+    });
 
     const empOptions = (selId) => `<option value="">— nie importuj / brak w kalendarzu —</option>` +
       state.employees.map((e) => `<option value="${e.id}"${e.id === selId ? " selected" : ""}>${escapeHtml(getDisplayName(e))}</option>`).join("");
@@ -2512,6 +2555,9 @@
       const entries = collectKronosEntries(p);
       const matched = matchKronosPerson(p);
       const done = kronosImported.has(p.id);
+      const selId = Object.prototype.hasOwnProperty.call(prevSels, String(i))
+        ? prevSels[String(i)]
+        : (matched ? matched.id : "");
       const summary = entries.size
         ? kronosEntriesSummary(entries)
         : `<span class="kr-none">brak absencji po zmapowaniu</span>`;
@@ -2527,31 +2573,53 @@
             <div class="kr-emp-summary">${summary}</div>
           </div>
           <div class="kr-emp-actions">
-            <select class="kr-emp-sel" data-p-idx="${i}">${empOptions(matched ? matched.id : "")}</select>
-            <button type="button" class="btn btn-primary btn-sm kr-import-btn" data-p-idx="${i}"${entries.size && !done ? "" : " disabled"}>${done ? "✓ Zaimportowano" : "Importuj"}</button>
+            <select class="kr-emp-sel" data-p-idx="${i}">${empOptions(selId)}</select>
+            <button type="button" class="btn btn-primary btn-sm kr-import-btn" data-p-idx="${i}"${entries.size && !done && selId ? "" : " disabled"}>${done ? "✓ Zaimportowano" : "Importuj"}</button>
           </div>
         </div>`;
     }).join("");
 
-    wrap.innerHTML = `<div class="kr-section-title">Pracownicy z raportu — importuj pojedynczo</div><div class="kr-emp-list">${rows}</div>`;
+    const readyCount = kronosMatchedImportable().length;
+    wrap.innerHTML = `
+      <div class="kr-section-head">
+        <div class="kr-section-title">Pracownicy z raportu</div>
+        <button type="button" class="btn btn-primary btn-sm" id="kronosImportAllBtn"${readyCount ? "" : " disabled"} title="Importuje absencje wszystkich osób dopasowanych do kalendarza (AIN lub nazwisko)">
+          Importuj wszystkie dopasowane${readyCount ? ` (${readyCount})` : ""}
+        </button>
+      </div>
+      <div class="kr-emp-list">${rows}</div>`;
 
     wrap.querySelectorAll(".kr-import-btn").forEach((btn) => {
       btn.addEventListener("click", () => importKronosPerson(parseInt(btn.dataset.pIdx, 10)));
     });
+    const allBtn = document.getElementById("kronosImportAllBtn");
+    if (allBtn) allBtn.addEventListener("click", importKronosAllMatched);
+    wrap.querySelectorAll(".kr-emp-sel").forEach((sel) => {
+      sel.addEventListener("change", () => {
+        if (!allBtn) return;
+        const n = kronosMatchedImportable().length;
+        allBtn.disabled = !n;
+        allBtn.textContent = `Importuj wszystkie dopasowane${n ? ` (${n})` : ""}`;
+      });
+    });
+
+    const newList = wrap.querySelector(".kr-emp-list");
+    const restore = () => {
+      if (newList) newList.scrollTop = prevScroll;
+      if (modal) modal.scrollTop = prevModalScroll;
+    };
+    restore();
+    requestAnimationFrame(restore);
   }
 
-  function importKronosPerson(idx) {
+  function applyKronosImport(idx, empId) {
     const p = kronosData?.people?.[idx];
-    if (!p) return;
-    const row = document.querySelector(`.kr-emp-row[data-pid="${p.id}"]`);
-    const sel = row ? row.querySelector(".kr-emp-sel") : null;
-    const empId = sel ? sel.value : "";
-    if (!empId) { showToast("Wybierz pracownika z kalendarza, do którego zaciągnąć absencje"); return; }
+    if (!p) return null;
     const emp = state.employees.find((e) => e.id === empId);
-    if (!emp) return;
+    if (!emp) return null;
 
     const entries = collectKronosEntries(p);
-    if (!entries.size) { showToast("Brak absencji do importu (sprawdź mapowanie kodów)"); return; }
+    if (!entries.size) return null;
 
     const holMaps = {};
     const holFor = (year) => (holMaps[year] = holMaps[year] || H.holidayMap(year));
@@ -2573,16 +2641,59 @@
     if (!normalizeAin(emp.ain) && p.id.length === 9) emp.ain = p.id;
 
     kronosImported.add(p.id);
+    return { emp, added, changed, same, skippedFree, outsideYear };
+  }
+
+  function kronosResultMsg(label, r) {
+    let msg = `${label}: dodano ${r.added}`;
+    if (r.changed) msg += `, nadpisano ${r.changed}`;
+    if (r.same) msg += `, bez zmian ${r.same}`;
+    if (r.skippedFree) msg += `, pominięto ${r.skippedFree} (weekend/święto)`;
+    if (r.outsideYear) msg += `, ${r.outsideYear} poza rokiem ${state.year}`;
+    return msg;
+  }
+
+  function importKronosPerson(idx) {
+    const empId = kronosSelectedEmpId(idx);
+    if (!empId) { showToast("Wybierz pracownika z kalendarza, do którego zaciągnąć absencje"); return; }
+    const r = applyKronosImport(idx, empId);
+    if (!r) { showToast("Brak absencji do importu (sprawdź mapowanie kodów)"); return; }
+    const scroll = kronosScrollSnapshot();
     saveState();
     renderAll();
-    renderKronosEmpList();
+    renderKronosEmpList(scroll);
+    showToast(kronosResultMsg(getDisplayName(r.emp), r));
+  }
 
-    let msg = `${getDisplayName(emp)}: dodano ${added}`;
-    if (changed) msg += `, nadpisano ${changed}`;
-    if (same) msg += `, bez zmian ${same}`;
-    if (skippedFree) msg += `, pominięto ${skippedFree} (weekend/święto)`;
-    if (outsideYear) msg += `, ${outsideYear} poza rokiem ${state.year}`;
-    showToast(msg);
+  function importKronosAllMatched() {
+    const idxs = kronosMatchedImportable();
+    if (!idxs.length) {
+      showToast("Brak dopasowanych osób z absencjami do importu");
+      return;
+    }
+    const totals = { added: 0, changed: 0, same: 0, skippedFree: 0, outsideYear: 0 };
+    let people = 0;
+    for (const idx of idxs) {
+      const empId = kronosSelectedEmpId(idx);
+      if (!empId) continue;
+      const r = applyKronosImport(idx, empId);
+      if (!r) continue;
+      people++;
+      totals.added += r.added;
+      totals.changed += r.changed;
+      totals.same += r.same;
+      totals.skippedFree += r.skippedFree;
+      totals.outsideYear += r.outsideYear;
+    }
+    if (!people) {
+      showToast("Nic nie zaimportowano");
+      return;
+    }
+    const scroll = kronosScrollSnapshot();
+    saveState();
+    renderAll();
+    renderKronosEmpList(scroll);
+    showToast(kronosResultMsg(`${people} os.`, totals));
   }
 
   // ─── formularz: ręczne wpisywanie absencji ────────────────────────────

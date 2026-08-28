@@ -3141,6 +3141,18 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     color: var(--text-muted);
 }
 
+.kr-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    margin: 0.8rem 0 0.35rem;
+}
+
+.kr-section-head .kr-section-title {
+    margin: 0;
+}
+
 .kr-section-title {
     margin: 0.8rem 0 0.35rem;
     font-size: 0.78rem;
