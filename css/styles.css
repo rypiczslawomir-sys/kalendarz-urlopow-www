@@ -56,6 +56,54 @@
 
     --day-col-w:     32px;
     --row-h:         42px;
+    --col-lp:        44px;
+    --col-name:      240px;
+    --col-pool:      60px;
+    --col-wyk:       84px;
+    --col-l4:        60px;
+    --col-m:         60px;
+    --col-zm:        60px;
+    --col-abs:       64px;
+    --col-actions:   68px;
+}
+
+/* Układ Standard — czytelniejszy na monitorach ~24" / Full HD */
+html[data-density="standard"] {
+    --day-col-w:     26px;
+    --row-h:         34px;
+    --col-lp:        36px;
+    --col-name:      176px;
+    --col-pool:      48px;
+    --col-wyk:       70px;
+    --col-l4:        48px;
+    --col-m:         48px;
+    --col-zm:        48px;
+    --col-abs:       52px;
+    --col-actions:   56px;
+}
+
+html[data-density="standard"] body {
+    font-size: 13px;
+}
+
+html[data-density="standard"] .app-header {
+    padding: 0.45rem 0.8rem;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+html[data-density="standard"] .header-controls {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+html[data-density="standard"] .btn {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.78rem;
+}
+
+html[data-density="standard"] .code-picker {
+    padding: 0.35rem 0.8rem;
 }
 
 /* ─── motyw ciemny (oryginalna paleta z pierwszej wersji) ─────────────── */
@@ -649,15 +697,15 @@ table.kalendarz.kalendarz-scroll {
 }
 
 /* sticky left columns */
-.col-lp { width: 44px; }
-.col-name { width: 240px; }
-.col-pool { width: 60px; }
-.col-wyk { width: 84px; }
-.col-l4 { width: 60px; }
-.col-m { width: 60px; }
-.col-zm { width: 60px; }
-.col-abs { width: 64px; }
-.col-actions { width: 68px; }
+.col-lp { width: var(--col-lp); }
+.col-name { width: var(--col-name); }
+.col-pool { width: var(--col-pool); }
+.col-wyk { width: var(--col-wyk); }
+.col-l4 { width: var(--col-l4); }
+.col-m { width: var(--col-m); }
+.col-zm { width: var(--col-zm); }
+.col-abs { width: var(--col-abs); }
+.col-actions { width: var(--col-actions); }
 
 /* lewy panel — komórki bez sticky (cały .cal-frozen jest sticky) */
 .kalendarz-frozen .col-lp,
@@ -673,15 +721,15 @@ table.kalendarz.kalendarz-scroll {
     left: auto;
 }
 
-.kalendarz-frozen .col-lp      { width: 44px;  min-width: 44px;  max-width: 44px; }
-.kalendarz-frozen .col-name    { width: 240px; min-width: 240px; max-width: 240px; }
-.kalendarz-frozen .col-pool    { width: 60px;  min-width: 60px;  max-width: 60px; }
-.kalendarz-frozen .col-wyk     { width: 84px;  min-width: 84px;  max-width: 84px; }
-.kalendarz-frozen .col-l4      { width: 60px;  min-width: 60px;  max-width: 60px; }
-.kalendarz-frozen .col-m       { width: 60px;  min-width: 60px;  max-width: 60px; }
-.kalendarz-frozen .col-zm      { width: 60px;  min-width: 60px;  max-width: 60px; }
-.kalendarz-frozen .col-abs     { width: 64px;  min-width: 64px;  max-width: 64px; }
-.kalendarz-frozen .col-actions { width: 68px;  min-width: 68px;  max-width: 68px; }
+.kalendarz-frozen .col-lp      { width: var(--col-lp);      min-width: var(--col-lp);      max-width: var(--col-lp); }
+.kalendarz-frozen .col-name    { width: var(--col-name);    min-width: var(--col-name);    max-width: var(--col-name); }
+.kalendarz-frozen .col-pool    { width: var(--col-pool);    min-width: var(--col-pool);    max-width: var(--col-pool); }
+.kalendarz-frozen .col-wyk     { width: var(--col-wyk);     min-width: var(--col-wyk);     max-width: var(--col-wyk); }
+.kalendarz-frozen .col-l4      { width: var(--col-l4);      min-width: var(--col-l4);      max-width: var(--col-l4); }
+.kalendarz-frozen .col-m       { width: var(--col-m);       min-width: var(--col-m);       max-width: var(--col-m); }
+.kalendarz-frozen .col-zm      { width: var(--col-zm);      min-width: var(--col-zm);      max-width: var(--col-zm); }
+.kalendarz-frozen .col-abs     { width: var(--col-abs);     min-width: var(--col-abs);     max-width: var(--col-abs); }
+.kalendarz-frozen .col-actions { width: var(--col-actions); min-width: var(--col-actions); max-width: var(--col-actions); }
 
 .kalendarz-frozen .cell-name {
     overflow: hidden;

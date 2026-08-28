@@ -12,6 +12,9 @@
                 if (localStorage.getItem("kalendarzTheme") === "dark") {
                     document.documentElement.dataset.theme = "dark";
                 }
+                if (localStorage.getItem("kalendarzDensity") === "standard") {
+                    document.documentElement.dataset.density = "standard";
+                }
             } catch (e) { /* ignore */ }
         })();
     </script>
@@ -33,6 +36,14 @@
             <label class="year-selector">
                 <span>Rok:</span>
                 <select id="yearSelect"></select>
+            </label>
+
+            <label class="year-selector" title="Dopasuj układ do wielkości monitora">
+                <span>Ekran:</span>
+                <select id="densitySelect">
+                    <option value="wide">Szeroki (34")</option>
+                    <option value="standard">Standard (24")</option>
+                </select>
             </label>
 
             <button class="btn btn-primary" id="addEmployeeBtn">
@@ -423,7 +434,7 @@
                 <ul>
                     <li><b>🖨 Drukuj</b> — roczny kalendarz wybranego pracownika (urlopy + podsumowanie puli).</li>
                     <li><b>Eksport / Import</b> — kopia zapasowa całego kalendarza do pliku .json (ostrożnie: import zastępuje dane).</li>
-                    <li>🌙 / ☀️ przełącza jasny i ciemny motyw.</li>
+                    <li>🌙 / ☀️ przełącza jasny i ciemny motyw. <b>Ekran</b> w nagłówku: Szeroki (34") albo Standard (24") — na mniejszym monitorze wybierz Standard, żeby kalendarz był czytelniejszy.</li>
                     <li>W nagłówku widać status zapisu. Nie zamykaj programu, gdy świeci się „niezapisane”.</li>
                 </ul>
 

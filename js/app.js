@@ -11,23 +11,41 @@
   const YEAR_MIN = 2024;
   const YEAR_MAX = 2060;
 
-  /** Szerokości kolumn lewego panelu — zgodne z css/styles.css (.col-*) */
+  /** Szerokości kolumn lewego panelu — zgodne z css/styles.css (--col-*) */
   const STICKY_COL_WIDTHS = {
-    "col-lp": 44, "col-name": 240, "col-pool": 60, "col-wyk": 84, "col-l4": 60, "col-m": 60, "col-zm": 60, "col-abs": 64, "col-actions": 68,
+    wide: {
+      "col-lp": 44, "col-name": 240, "col-pool": 60, "col-wyk": 84, "col-l4": 60, "col-m": 60, "col-zm": 60, "col-abs": 64, "col-actions": 68,
+    },
+    standard: {
+      "col-lp": 36, "col-name": 176, "col-pool": 48, "col-wyk": 70, "col-l4": 48, "col-m": 48, "col-zm": 48, "col-abs": 52, "col-actions": 56,
+    },
   };
+  let uiDensity = "wide";
   function frozenPanelWidthPx() {
+    const w = STICKY_COL_WIDTHS[uiDensity] || STICKY_COL_WIDTHS.wide;
     const poolCount = CODES.filter((c) => c.defaultPool !== null).length;
     return (
-      STICKY_COL_WIDTHS["col-lp"] +
-      STICKY_COL_WIDTHS["col-name"] +
-      poolCount * STICKY_COL_WIDTHS["col-pool"] +
-      poolCount * STICKY_COL_WIDTHS["col-wyk"] +
-      STICKY_COL_WIDTHS["col-l4"] +
-      STICKY_COL_WIDTHS["col-m"] +
-      STICKY_COL_WIDTHS["col-zm"] +
-      STICKY_COL_WIDTHS["col-abs"] +
-      STICKY_COL_WIDTHS["col-actions"]
+      w["col-lp"] +
+      w["col-name"] +
+      poolCount * w["col-pool"] +
+      poolCount * w["col-wyk"] +
+      w["col-l4"] +
+      w["col-m"] +
+      w["col-zm"] +
+      w["col-abs"] +
+      w["col-actions"]
     );
+  }
+
+  function applyDensity(density) {
+    uiDensity = density === "standard" ? "standard" : "wide";
+    if (uiDensity === "standard") document.documentElement.dataset.density = "standard";
+    else delete document.documentElement.dataset.density;
+    const sel = document.getElementById("densitySelect");
+    if (sel) sel.value = uiDensity;
+    try { localStorage.setItem("kalendarzDensity", uiDensity); } catch (e) { /* ignore */ }
+    document.documentElement.style.setProperty("--frozen-width", frozenPanelWidthPx() + "px");
+    requestAnimationFrame(syncRowHeights);
   }
 
   function linkRowHover(trA, trB) {
@@ -3776,6 +3794,15 @@
       state.year = parseInt(e.target.value, 10);
       saveState();
       populateViewSelectors();
+      renderAll();
+    });
+
+    // Układ Szeroki (34") / Standard (24") — zapamiętywany na urządzeniu
+    let storedDensity = "wide";
+    try { if (localStorage.getItem("kalendarzDensity") === "standard") storedDensity = "standard"; } catch (e) { /* ignore */ }
+    applyDensity(storedDensity);
+    document.getElementById("densitySelect").addEventListener("change", (e) => {
+      applyDensity(e.target.value);
       renderAll();
     });
 
