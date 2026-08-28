@@ -502,28 +502,56 @@
     const clamped = Math.max(0, pool);
     return isHourlyCode(code) ? clamped : clamped * 8;
   }
-  function fitsPool(emp, code, oldVal, newHoursForCell, includeUZinU) {
+  function numericPoolDays(emp, code) {
+    const pool = emp.pools[code];
+    if (pool === null || pool === undefined || typeof pool !== "number" || isNaN(pool)) return 0;
+    return Math.max(0, pool);
+  }
+  // Limit urlopu wypoczynkowego w roku = pula U + pula ZAL (zaległy powiększa limit).
+  function vacationLimitHours(emp) {
+    const u = poolHoursLimit(emp, "U");
+    if (u === Infinity) return Infinity;
+    const zal = poolHoursLimit(emp, "ZAL");
+    return u + (zal === Infinity ? 0 : zal);
+  }
+  function vacationUsedHours(emp) {
+    return getUsage(emp, "U", state.year).totalHours
+      + getUsage(emp, "UŻ", state.year).totalHours
+      + getUsage(emp, "ZAL", state.year).totalHours;
+  }
+  function countsTowardVacation(code) {
+    return code === "U" || code === "UŻ" || code === "ZAL";
+  }
+  function fitsVacationLimit(emp, oldVal, newHoursForCell, newCode) {
+    const limit = vacationLimitHours(emp);
+    if (limit === Infinity) return true;
+    const oldCode = getCode(oldVal);
+    const oldCounted = countsTowardVacation(oldCode) ? getHours(oldVal) : 0;
+    const add = countsTowardVacation(newCode) ? newHoursForCell : 0;
+    return (vacationUsedHours(emp) - oldCounted + add) <= limit;
+  }
+  function fitsPool(emp, code, oldVal, newHoursForCell) {
     const limit = poolHoursLimit(emp, code);
     if (limit === Infinity) return true;
     const oldCode = getCode(oldVal);
-    let current = getUsage(emp, code, state.year).totalHours;
-    let oldCounted = oldCode === code ? getHours(oldVal) : 0;
-    if (includeUZinU && code === "U") {
-      current += getUsage(emp, "UŻ", state.year).totalHours;
-      if (oldCode === "UŻ") oldCounted = getHours(oldVal);
-    }
+    const current = getUsage(emp, code, state.year).totalHours;
+    const oldCounted = oldCode === code ? getHours(oldVal) : 0;
     return (current - oldCounted + newHoursForCell) <= limit;
   }
 
-  // UŻ (na żądanie) jest częścią puli urlopu wypoczynkowego (art. 167² KP):
-  // dzień UŻ pomniejsza również limit U.
+  // UŻ schodzi z puli U. ZAL powiększa limit U w danym roku (U + ZAL),
+  // a wykorzystany ZAL też zajmuje ten wspólny limit.
   function wouldFitInPool(emp, newCode, oldVal, newHoursForCell) {
-    if (newCode === "U") return fitsPool(emp, "U", oldVal, newHoursForCell, true);
+    if (newCode === "U") return fitsVacationLimit(emp, oldVal, newHoursForCell, "U");
     if (newCode === "UŻ") {
-      return fitsPool(emp, "UŻ", oldVal, newHoursForCell, false) &&
-             fitsPool(emp, "U", oldVal, newHoursForCell, true);
+      return fitsPool(emp, "UŻ", oldVal, newHoursForCell) &&
+             fitsVacationLimit(emp, oldVal, newHoursForCell, "UŻ");
     }
-    return fitsPool(emp, newCode, oldVal, newHoursForCell, false);
+    if (newCode === "ZAL") {
+      return fitsPool(emp, "ZAL", oldVal, newHoursForCell) &&
+             fitsVacationLimit(emp, oldVal, newHoursForCell, "ZAL");
+    }
+    return fitsPool(emp, newCode, oldVal, newHoursForCell);
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────
@@ -1273,10 +1301,15 @@
 
       const usage = getUsage(emp, c.code, state.year);
       let totalHours = usage.totalHours;
-      // U pokazuje łączne zużycie: wypoczynkowy + na żądanie (UŻ schodzi z puli U)
-      if (c.code === "U") totalHours += getUsage(emp, "UŻ", state.year).totalHours;
+      let pool = emp.pools[c.code];
+      // U: limit = pula U + pula ZAL; zużycie = U + UŻ + ZAL
+      if (c.code === "U") {
+        totalHours += getUsage(emp, "UŻ", state.year).totalHours;
+        totalHours += getUsage(emp, "ZAL", state.year).totalHours;
+        const zalDays = numericPoolDays(emp, "ZAL");
+        if (typeof pool === "number" && !isNaN(pool)) pool = pool + zalDays;
+      }
       const days = totalHours / 8;
-      const pool = emp.pools[c.code];
       const hourly = isHourlyCode(c.code);
 
       // Wartość użyta w jednostce odpowiadającej puli
@@ -1314,7 +1347,13 @@
           tip += ` z puli ${pool} ${hourly ? "godz." : "dni"}`;
           if (c.code === "U") {
             const uzDays = getUsage(emp, "UŻ", state.year).days;
+            const zalUsed = getUsage(emp, "ZAL", state.year).days;
+            const zalPool = numericPoolDays(emp, "ZAL");
             if (uzDays > 0) tip += ` (w tym ${formatUsage(uzDays)} dni UŻ — na żądanie schodzi z puli U)`;
+            if (zalPool > 0) {
+              tip += `; limit powiększony o ${formatUsage(zalPool)} dni ZAL`;
+              if (zalUsed > 0) tip += ` (wykorzystano ${formatUsage(zalUsed)} ZAL)`;
+            }
           }
           if (usedDisplay > pool) tip += " — PRZEKROCZONO LIMIT";
           else if (usedDisplay > 0) tip += " — wykorzystano w limicie";
@@ -1461,8 +1500,10 @@
             const code = newCode;
             const pool = emp.pools[code];
             const unit = isHourlyCode(code) ? "godz." : "dni";
-            if (code === "UŻ" && fitsPool(emp, "UŻ", oldVal, newHours, false)) {
-              notifyBlocked(`Pula urlopu wypoczynkowego (U: ${emp.pools["U"]} dni) wyczerpana — UŻ pomniejsza limit U`);
+            if (code === "UŻ" && fitsPool(emp, "UŻ", oldVal, newHours)) {
+              notifyBlocked(`Pula urlopu wypoczynkowego wyczerpana (U+ZAL: ${formatUsage(numericPoolDays(emp, "U") + numericPoolDays(emp, "ZAL"))} dni) — UŻ pomniejsza limit U`);
+            } else if ((code === "U" || code === "ZAL") && !fitsVacationLimit(emp, oldVal, newHours, code)) {
+              notifyBlocked(`Pula urlopu wypoczynkowego wyczerpana (U+ZAL: ${formatUsage(numericPoolDays(emp, "U") + numericPoolDays(emp, "ZAL"))} dni)`);
             } else {
               notifyBlocked(`Pula ${code} wyczerpana (${pool} ${unit})`);
             }
@@ -3529,14 +3570,15 @@
       let days = getUsage(emp, code, year).days;
       let noteTxt = "";
       if (code === "U") {
-        // UŻ schodzi z puli urlopu wypoczynkowego
         days += getUsage(emp, "UŻ", year).days;
-        noteTxt = " (razem z UŻ)";
+        days += getUsage(emp, "ZAL", year).days;
+        noteTxt = " (razem z UŻ i ZAL)";
       }
-      const pool = typeof emp.pools[code] === "number" ? emp.pools[code] : 0;
+      let pool = typeof emp.pools[code] === "number" ? emp.pools[code] : 0;
+      if (code === "U") pool += typeof emp.pools["ZAL"] === "number" ? emp.pools["ZAL"] : 0;
       const left = Math.max(0, pool - days);
-      if (code !== "UŻ") {
-        // UŻ mieści się w puli U — nie dublujemy go w sumie
+      if (code !== "UŻ" && code !== "ZAL") {
+        // UŻ i ZAL mieszczą się w limicie U — nie dublujemy ich w sumie
         sumPool += pool;
         sumUsed += days;
       }
