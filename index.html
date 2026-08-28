@@ -70,6 +70,8 @@
                 📝 Wpisz absencje
             </button>
 
+            <button class="btn btn-ghost" id="panelsLockBtn" title="Zablokuj okienka, żeby ich przypadkiem nie przesunąć">🔓 Okienka</button>
+
             <button class="btn btn-ghost" id="themeToggleBtn" title="Przełącz na ciemny motyw">🌙</button>
 
             <button class="btn btn-ghost" id="accountsBtn" title="Zarządzaj kontami użytkowników" hidden>👥 Konta</button>
@@ -411,18 +413,27 @@
                     <li>Możesz pokazać cały rok, jeden miesiąc albo zakres tygodni.</li>
                     <li>Kliknięcie daty w nagłówku zaznacza dzień (Ctrl+klik — kilka dni). Wtedy okienka pokażą obsadę i sumę urlopów.</li>
                     <li>Okienka startują zwinięte — rozwiniesz je plusem. Można je przesuwać za pasek tytułu i zmieniać rozmiar. Dwuklik w tytuł resetuje położenie.</li>
+                    <li>Przycisk <b>🔓 Okienka</b> w nagłówku blokuje wszystkie pływające okienka (🔒) — nie przesuną się i nie zmienią rozmiaru. Kliknij ponownie, żeby odblokować.</li>
                     <li>Czerwony pasek u góry pojawia się, gdy w dniu roboczym nikt z funkcją „Prowadzenie lay-up” nie jest obecny.</li>
                 </ul>
 
-                <h3>7. Wydruk, eksport, motyw</h3>
+                <h3>7. Zapis danych na serwerze — ważne</h3>
+                <ul>
+                    <li>Każda zmiana (urlop, pracownik, pula) jest zapisywana <b>automatycznie na serwerze</b> — nie ma osobnego przycisku „Zapisz”.</li>
+                    <li>Zapis nie jest natychmiastowy. Najpierw program zbiera zmiany, potem wysyła je na serwer. Na stronie www może to zająć <b>do około 30 sekund</b> od ostatniej edycji.</li>
+                    <li>W nagłówku widać status: żółty <b>Niezapisane</b> oznacza, że zmiany jeszcze nie trafiły na serwer. Zielony <b>Zapisano</b> oznacza, że serwer już je przyjął.</li>
+                    <li><b>Nie zamykaj karty, nie odświeżaj strony i nie wylogowuj się</b>, dopóki nie zobaczysz „Zapisano”. W przeciwnym razie ostatnie wpisy mogą zginąć.</li>
+                    <li>Wersja desktopowa (instalator) zapisuje dane od razu na komputerze — tam ten czas oczekiwania nie obowiązuje.</li>
+                </ul>
+
+                <h3>8. Wydruk, eksport, motyw</h3>
                 <ul>
                     <li><b>🖨 Drukuj</b> — roczny kalendarz wybranego pracownika (urlopy + podsumowanie puli).</li>
                     <li><b>Eksport / Import</b> — kopia zapasowa całego kalendarza do pliku .json (ostrożnie: import zastępuje dane).</li>
                     <li>🌙 / ☀️ przełącza jasny i ciemny motyw. <b>Ekran</b> w nagłówku: Szeroki (34") albo Standard (24") — na mniejszym monitorze wybierz Standard, żeby kalendarz był czytelniejszy.</li>
-                    <li>W nagłówku widać status zapisu. Nie zamykaj programu, gdy świeci się „niezapisane”.</li>
                 </ul>
 
-                <h3>8. Dla administratora</h3>
+                <h3>9. Dla administratora</h3>
                 <ul>
                     <li>Przycisk <b>👥 Konta</b>: dodawanie użytkowników, zmiana loginu i hasła, usuwanie konta.</li>
                     <li>Administrator nie widzi cudzych kalendarzy. Może przywrócić kopię zapasową z ostatnich 7 dni (dyskietka przy koncie), gdy ktoś poprosi o odzyskanie danych.</li>

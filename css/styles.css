@@ -2956,6 +2956,14 @@ body:not(.clearing-mode) .day-cell.holiday:hover {
     min-height: 0;
 }
 
+html[data-panels-locked="1"] .day-stats-header {
+    cursor: default;
+}
+
+html[data-panels-locked="1"] .panel-resizable {
+    resize: none;
+}
+
 /* Panel godzin tygodnia: sekcje dni jako osobne karty */
 .wh-day-group {
     margin-top: 0.5rem;

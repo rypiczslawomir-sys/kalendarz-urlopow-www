@@ -2048,6 +2048,21 @@
     } catch (e) { /* ignore */ }
   }
 
+  let panelsLocked = false;
+  function applyPanelsLock(locked) {
+    panelsLocked = Boolean(locked);
+    if (panelsLocked) document.documentElement.dataset.panelsLocked = "1";
+    else delete document.documentElement.dataset.panelsLocked;
+    const btn = document.getElementById("panelsLockBtn");
+    if (btn) {
+      btn.textContent = panelsLocked ? "🔒 Okienka" : "🔓 Okienka";
+      btn.title = panelsLocked
+        ? "Okienka zablokowane — kliknij, aby znów móc je przesuwać i zmieniać rozmiar"
+        : "Zablokuj okienka, żeby ich przypadkiem nie przesunąć";
+    }
+    try { localStorage.setItem("kalendarzPanelsLocked", panelsLocked ? "1" : "0"); } catch (e) { /* ignore */ }
+  }
+
   // Regulacja wielkości okienka (uchwyt w prawym dolnym rogu) + zapamiętanie
   function makePanelResizable(panelId) {
     const panel = document.getElementById(panelId);
@@ -2066,7 +2081,7 @@
     // Zapisuj rozmiar po zmianie (tylko gdy panel rozwinięty)
     let t = null;
     const ro = new ResizeObserver(() => {
-      if (panel.classList.contains("collapsed")) return;
+      if (panelsLocked || panel.classList.contains("collapsed")) return;
       clearTimeout(t);
       t = setTimeout(() => {
         const r = panel.getBoundingClientRect();
@@ -2106,11 +2121,13 @@
     } catch (e) { /* ignore */ }
 
     header.addEventListener("dblclick", (e) => {
+      if (panelsLocked) return;
       if (e.target.closest("button")) return;
       resetPanelPos(panel, storageKey);
     });
 
     header.addEventListener("pointerdown", (e) => {
+      if (panelsLocked) return;
       if (e.button !== 0 || e.target.closest("button")) return;
       e.preventDefault();
       const rect = panel.getBoundingClientRect();
@@ -3839,6 +3856,10 @@
     // (pozycja i rozmiar zapamiętywane na urządzeniu)
     ["dayStats", "trainingStatsPanel", "vacSelPanel", "weekHoursPanel"]
       .forEach((id) => { makePanelDraggable(id); makePanelResizable(id); });
+    let storedLock = false;
+    try { storedLock = localStorage.getItem("kalendarzPanelsLocked") === "1"; } catch (e) { /* ignore */ }
+    applyPanelsLock(storedLock);
+    document.getElementById("panelsLockBtn").addEventListener("click", () => applyPanelsLock(!panelsLocked));
 
     // Motyw jasny/ciemny — zapamiętywany na tym urządzeniu
     function applyTheme(theme) {
