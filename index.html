@@ -131,13 +131,13 @@
     </section>
 
     <!-- Pływające okno: statystyki obsady na wybrany dzień -->
-    <aside class="day-stats" id="dayStats">
+    <aside class="day-stats collapsed" id="dayStats">
         <div class="day-stats-header">
             <div class="day-stats-title">
                 <span class="day-stats-icon">👥</span>
                 Obsada na dzień
             </div>
-            <button class="day-stats-toggle" id="dayStatsToggleBtn" title="Zwiń / rozwiń">−</button>
+            <button class="day-stats-toggle" id="dayStatsToggleBtn" title="Zwiń / rozwiń">+</button>
         </div>
         <div class="day-stats-body" id="dayStatsBody">
             <div class="day-stats-empty">
@@ -147,13 +147,13 @@
     </aside>
 
     <!-- Pływające okno: wykres kołowy funkcji na wybrany dzień -->
-    <aside class="func-chart-panel" id="funcChartPanel">
+    <aside class="func-chart-panel collapsed" id="funcChartPanel">
         <div class="day-stats-header">
             <div class="day-stats-title">
                 <span class="day-stats-icon">📊</span>
                 Udział funkcji
             </div>
-            <button class="day-stats-toggle" id="funcChartToggleBtn" title="Zwiń / rozwiń">−</button>
+            <button class="day-stats-toggle" id="funcChartToggleBtn" title="Zwiń / rozwiń">+</button>
         </div>
         <div class="func-chart-body" id="funcChartBody">
             <div class="day-stats-empty">
@@ -164,37 +164,37 @@
 
     <!-- Prawy dolny róg: godziny tygodnia + suma urlopów + przeszkoleni pracownicy -->
     <div class="dock-right">
-        <aside class="week-hours-panel" id="weekHoursPanel">
+        <aside class="week-hours-panel collapsed" id="weekHoursPanel">
             <div class="day-stats-header">
                 <div class="day-stats-title">
                     <span class="day-stats-icon">⏱</span>
                     Godziny absencji — tydzień
                 </div>
-                <button class="day-stats-toggle" id="weekHoursToggleBtn" title="Zwiń / rozwiń">−</button>
+                <button class="day-stats-toggle" id="weekHoursToggleBtn" title="Zwiń / rozwiń">+</button>
             </div>
             <div class="week-hours-body" id="weekHoursBody"></div>
         </aside>
 
-        <aside class="vac-sel-panel" id="vacSelPanel">
+        <aside class="vac-sel-panel collapsed" id="vacSelPanel">
             <div class="day-stats-header">
                 <div class="day-stats-title">
                     <span class="day-stats-icon">🧮</span>
                     Suma urlopów — zaznaczone dni
                 </div>
-                <button class="day-stats-toggle" id="vacSelToggleBtn" title="Zwiń / rozwiń">−</button>
+                <button class="day-stats-toggle" id="vacSelToggleBtn" title="Zwiń / rozwiń">+</button>
             </div>
             <div class="vac-sel-body" id="vacSelBody">
                 <div class="day-stats-empty">Kliknij datę w nagłówku (Ctrl+klik = kilka dni), aby zobaczyć sumę urlopów.</div>
             </div>
         </aside>
 
-        <aside class="training-stats-panel" id="trainingStatsPanel">
+        <aside class="training-stats-panel collapsed" id="trainingStatsPanel">
             <div class="day-stats-header">
                 <div class="day-stats-title">
                     <span class="day-stats-icon">🎓</span>
                     Przeszkoleni pracownicy
                 </div>
-                <button class="day-stats-toggle" id="trainingStatsToggleBtn" title="Zwiń / rozwiń">−</button>
+                <button class="day-stats-toggle" id="trainingStatsToggleBtn" title="Zwiń / rozwiń">+</button>
             </div>
             <div class="training-stats-body" id="trainingStatsBody"></div>
         </aside>
